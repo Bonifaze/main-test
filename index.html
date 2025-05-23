@@ -1,14 +1,3391 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <link rel="icon" type="image/svg+xml" href="/vite.svg" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Wikidata-Track | Analyze User Contributions</title>
     <link rel="icon" type="image/svg+xml" href="logo.svg" />
-    <title>Wikidata-Track: User Activity Tracking System</title>
-  </head>
-  <body>
-    <div id="root"></div>
-    <script type="module" src="/src/main.tsx"></script>
-  </body>
+
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&amp;family=Montserrat:wght@400;500;600;700&amp;display=swap"
+        rel="stylesheet">
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        'wiki-green': '#339966',
+                        'wiki-blue': '#006699',
+                        'wiki-light': '#f8fafc',
+                        'wiki-dark': '#0d1117',
+                    },
+                    fontFamily: {
+                        'inter': ['Inter', 'sans-serif'],
+                        'montserrat': ['Montserrat', 'sans-serif'],
+                    },
+                    animation: {
+                        'float': 'float 6s ease-in-out infinite',
+                        'pulse-slow': 'pulse 4s cubic-bezier(0.4, 0, 0.6, 1) infinite',
+                    },
+                    keyframes: {
+                        float: {
+                            '0%, 100%': { transform: 'translateY(0)' },
+                            '50%': { transform: 'translateY(-10px)' },
+                        }
+                    },
+                }
+            }
+        }
+    </script>
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            scroll-behavior: smooth;
+        }
+
+        .gradient-text {
+            background: linear-gradient(90deg, #006699, #339966);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .gradient-bg {
+            background: linear-gradient(135deg, #006699, #339966);
+        }
+
+        .feature-card {
+            transition: all 0.3s ease;
+        }
+
+        .feature-card:hover {
+            transform: translateY(-5px);
+        }
+
+        .chart-animation {
+            animation: chart-grow 2s ease-out forwards;
+            transform-origin: bottom;
+        }
+
+        @keyframes chart-grow {
+            from {
+                transform: scaleY(0);
+            }
+
+            to {
+                transform: scaleY(1);
+            }
+        }
+
+        .custom-shape-divider {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            width: 100%;
+            overflow: hidden;
+            line-height: 0;
+        }
+
+        .custom-shape-divider svg {
+            position: relative;
+            display: block;
+            width: calc(100% + 1.3px);
+            height: 70px;
+        }
+
+        .custom-shape-divider .shape-fill {
+            fill: #FFFFFF;
+        }
+
+        .dark .custom-shape-divider .shape-fill {
+            fill: #0d1117;
+        }
+
+        .scrollbar-hide::-webkit-scrollbar {
+            display: none;
+        }
+
+        .scrollbar-hide {
+            -ms-overflow-style: none;
+            scrollbar-width: none;
+        }
+
+        .blob {
+            border-radius: 42% 58% 70% 30% / 45% 45% 55% 55%;
+            animation: blob-animation 8s linear infinite;
+        }
+
+        @keyframes blob-animation {
+
+            0%,
+            100% {
+                border-radius: 42% 58% 70% 30% / 45% 45% 55% 55%;
+            }
+
+            25% {
+                border-radius: 45% 55% 65% 35% / 40% 50% 50% 60%;
+            }
+
+            50% {
+                border-radius: 50% 50% 60% 40% / 35% 55% 45% 65%;
+            }
+
+            75% {
+                border-radius: 55% 45% 55% 45% / 50% 60% 40% 50%;
+            }
+        }
+
+        .animated-gradient {
+            background: linear-gradient(-45deg, #006699, #339966, #006699, #339966);
+            background-size: 400% 400%;
+            animation: gradient 15s ease infinite;
+        }
+
+        @keyframes gradient {
+            0% {
+                background-position: 0% 50%;
+            }
+
+            50% {
+                background-position: 100% 50%;
+            }
+
+            100% {
+                background-position: 0% 50%;
+            }
+        }
+
+        .data-point {
+            animation: data-point-appear 0.5s ease-out forwards;
+            opacity: 0;
+        }
+
+        @keyframes data-point-appear {
+            from {
+                opacity: 0;
+                transform: scale(0);
+            }
+
+            to {
+                opacity: 1;
+                transform: scale(1);
+            }
+        }
+
+        .data-point:nth-child(1) {
+            animation-delay: 0.1s;
+        }
+
+        .data-point:nth-child(2) {
+            animation-delay: 0.2s;
+        }
+
+        .data-point:nth-child(3) {
+            animation-delay: 0.3s;
+        }
+
+        .data-point:nth-child(4) {
+            animation-delay: 0.4s;
+        }
+
+        .data-point:nth-child(5) {
+            animation-delay: 0.5s;
+        }
+
+        .data-point:nth-child(6) {
+            animation-delay: 0.6s;
+        }
+
+        .data-point:nth-child(7) {
+            animation-delay: 0.7s;
+        }
+
+        .line {
+            stroke-dasharray: 1000;
+            stroke-dashoffset: 1000;
+            animation: dash 2s ease-out forwards;
+            animation-delay: 0.5s;
+        }
+
+        @keyframes dash {
+            to {
+                stroke-dashoffset: 0;
+            }
+        }
+
+        /* Additional styles for interactive elements */
+        .faq-button svg {
+            transition: transform 0.3s ease;
+        }
+
+        .faq-content {
+            transition: all 0.3s ease;
+            max-height: 0;
+            overflow: hidden;
+        }
+
+        .faq-content.active {
+            max-height: 500px;
+        }
+
+        /* Mobile menu transitions */
+        #mobile-menu {
+            transition: all 0.3s ease;
+            transform-origin: top;
+            transform: scaleY(0);
+            opacity: 0;
+        }
+
+        #mobile-menu.hidden {
+            transform: scaleY(0);
+            opacity: 0;
+        }
+
+        #mobile-menu:not(.hidden) {
+            transform: scaleY(1);
+            opacity: 1;
+        }
+
+        /* Navigation link transitions */
+        nav a {
+            transition: color 0.3s ease;
+        }
+
+        /* Button hover effects */
+        .hover\:bg-wiki-blue\/90:hover {
+            transition: background-color 0.3s ease;
+        }
+
+        .hover\:shadow-lg:hover {
+            transition: box-shadow 0.3s ease;
+        }
+
+        /* Responsive adjustments */
+        @media (max-width: 768px) {
+            .feature-card {
+                margin-bottom: 1rem;
+            }
+
+            .grid-cols-2,
+            .grid-cols-3,
+            .grid-cols-4 {
+                grid-template-columns: 1fr;
+            }
+
+            .lg\:flex {
+                flex-direction: column;
+            }
+
+            .lg\:w-1\/2 {
+                width: 100%;
+            }
+        }
+
+        /* Ensure proper spacing on mobile */
+        @media (max-width: 640px) {
+            .px-4 {
+                padding-left: 1rem;
+                padding-right: 1rem;
+            }
+
+            .py-20 {
+                padding-top: 3rem;
+                padding-bottom: 3rem;
+            }
+
+            .text-4xl {
+                font-size: 2rem;
+                line-height: 2.5rem;
+            }
+        }
+    </style>
+    <style>
+        *,
+        ::before,
+        ::after {
+            --tw-border-spacing-x: 0;
+            --tw-border-spacing-y: 0;
+            --tw-translate-x: 0;
+            --tw-translate-y: 0;
+            --tw-rotate: 0;
+            --tw-skew-x: 0;
+            --tw-skew-y: 0;
+            --tw-scale-x: 1;
+            --tw-scale-y: 1;
+            --tw-pan-x: ;
+            --tw-pan-y: ;
+            --tw-pinch-zoom: ;
+            --tw-scroll-snap-strictness: proximity;
+            --tw-gradient-from-position: ;
+            --tw-gradient-via-position: ;
+            --tw-gradient-to-position: ;
+            --tw-ordinal: ;
+            --tw-slashed-zero: ;
+            --tw-numeric-figure: ;
+            --tw-numeric-spacing: ;
+            --tw-numeric-fraction: ;
+            --tw-ring-inset: ;
+            --tw-ring-offset-width: 0px;
+            --tw-ring-offset-color: #fff;
+            --tw-ring-color: rgb(59 130 246 / 0.5);
+            --tw-ring-offset-shadow: 0 0 #0000;
+            --tw-ring-shadow: 0 0 #0000;
+            --tw-shadow: 0 0 #0000;
+            --tw-shadow-colored: 0 0 #0000;
+            --tw-blur: ;
+            --tw-brightness: ;
+            --tw-contrast: ;
+            --tw-grayscale: ;
+            --tw-hue-rotate: ;
+            --tw-invert: ;
+            --tw-saturate: ;
+            --tw-sepia: ;
+            --tw-drop-shadow: ;
+            --tw-backdrop-blur: ;
+            --tw-backdrop-brightness: ;
+            --tw-backdrop-contrast: ;
+            --tw-backdrop-grayscale: ;
+            --tw-backdrop-hue-rotate: ;
+            --tw-backdrop-invert: ;
+            --tw-backdrop-opacity: ;
+            --tw-backdrop-saturate: ;
+            --tw-backdrop-sepia: ;
+            --tw-contain-size: ;
+            --tw-contain-layout: ;
+            --tw-contain-paint: ;
+            --tw-contain-style:
+        }
+
+        ::backdrop {
+            --tw-border-spacing-x: 0;
+            --tw-border-spacing-y: 0;
+            --tw-translate-x: 0;
+            --tw-translate-y: 0;
+            --tw-rotate: 0;
+            --tw-skew-x: 0;
+            --tw-skew-y: 0;
+            --tw-scale-x: 1;
+            --tw-scale-y: 1;
+            --tw-pan-x: ;
+            --tw-pan-y: ;
+            --tw-pinch-zoom: ;
+            --tw-scroll-snap-strictness: proximity;
+            --tw-gradient-from-position: ;
+            --tw-gradient-via-position: ;
+            --tw-gradient-to-position: ;
+            --tw-ordinal: ;
+            --tw-slashed-zero: ;
+            --tw-numeric-figure: ;
+            --tw-numeric-spacing: ;
+            --tw-numeric-fraction: ;
+            --tw-ring-inset: ;
+            --tw-ring-offset-width: 0px;
+            --tw-ring-offset-color: #fff;
+            --tw-ring-color: rgb(59 130 246 / 0.5);
+            --tw-ring-offset-shadow: 0 0 #0000;
+            --tw-ring-shadow: 0 0 #0000;
+            --tw-shadow: 0 0 #0000;
+            --tw-shadow-colored: 0 0 #0000;
+            --tw-blur: ;
+            --tw-brightness: ;
+            --tw-contrast: ;
+            --tw-grayscale: ;
+            --tw-hue-rotate: ;
+            --tw-invert: ;
+            --tw-saturate: ;
+            --tw-sepia: ;
+            --tw-drop-shadow: ;
+            --tw-backdrop-blur: ;
+            --tw-backdrop-brightness: ;
+            --tw-backdrop-contrast: ;
+            --tw-backdrop-grayscale: ;
+            --tw-backdrop-hue-rotate: ;
+            --tw-backdrop-invert: ;
+            --tw-backdrop-opacity: ;
+            --tw-backdrop-saturate: ;
+            --tw-backdrop-sepia: ;
+            --tw-contain-size: ;
+            --tw-contain-layout: ;
+            --tw-contain-paint: ;
+            --tw-contain-style:
+        }
+
+        /* ! tailwindcss v3.4.16 | MIT License | https://tailwindcss.com */
+        *,
+        ::after,
+        ::before {
+            box-sizing: border-box;
+            border-width: 0;
+            border-style: solid;
+            border-color: #e5e7eb
+        }
+
+        ::after,
+        ::before {
+            --tw-content: ''
+        }
+
+        :host,
+        html {
+            line-height: 1.5;
+            -webkit-text-size-adjust: 100%;
+            -moz-tab-size: 4;
+            tab-size: 4;
+            font-family: ui-sans-serif, system-ui, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji";
+            font-feature-settings: normal;
+            font-variation-settings: normal;
+            -webkit-tap-highlight-color: transparent
+        }
+
+        body {
+            margin: 0;
+            line-height: inherit
+        }
+
+        hr {
+            height: 0;
+            color: inherit;
+            border-top-width: 1px
+        }
+
+        abbr:where([title]) {
+            -webkit-text-decoration: underline dotted;
+            text-decoration: underline dotted
+        }
+
+        h1,
+        h2,
+        h3,
+        h4,
+        h5,
+        h6 {
+            font-size: inherit;
+            font-weight: inherit
+        }
+
+        a {
+            color: inherit;
+            text-decoration: inherit
+        }
+
+        b,
+        strong {
+            font-weight: bolder
+        }
+
+        code,
+        kbd,
+        pre,
+        samp {
+            font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+            font-feature-settings: normal;
+            font-variation-settings: normal;
+            font-size: 1em
+        }
+
+        small {
+            font-size: 80%
+        }
+
+        sub,
+        sup {
+            font-size: 75%;
+            line-height: 0;
+            position: relative;
+            vertical-align: baseline
+        }
+
+        sub {
+            bottom: -.25em
+        }
+
+        sup {
+            top: -.5em
+        }
+
+        table {
+            text-indent: 0;
+            border-color: inherit;
+            border-collapse: collapse
+        }
+
+        button,
+        input,
+        optgroup,
+        select,
+        textarea {
+            font-family: inherit;
+            font-feature-settings: inherit;
+            font-variation-settings: inherit;
+            font-size: 100%;
+            font-weight: inherit;
+            line-height: inherit;
+            letter-spacing: inherit;
+            color: inherit;
+            margin: 0;
+            padding: 0
+        }
+
+        button,
+        select {
+            text-transform: none
+        }
+
+        button,
+        input:where([type=button]),
+        input:where([type=reset]),
+        input:where([type=submit]) {
+            -webkit-appearance: button;
+            background-color: transparent;
+            background-image: none
+        }
+
+        :-moz-focusring {
+            outline: auto
+        }
+
+        :-moz-ui-invalid {
+            box-shadow: none
+        }
+
+        progress {
+            vertical-align: baseline
+        }
+
+        ::-webkit-inner-spin-button,
+        ::-webkit-outer-spin-button {
+            height: auto
+        }
+
+        [type=search] {
+            -webkit-appearance: textfield;
+            outline-offset: -2px
+        }
+
+        ::-webkit-search-decoration {
+            -webkit-appearance: none
+        }
+
+        ::-webkit-file-upload-button {
+            -webkit-appearance: button;
+            font: inherit
+        }
+
+        summary {
+            display: list-item
+        }
+
+        blockquote,
+        dd,
+        dl,
+        figure,
+        h1,
+        h2,
+        h3,
+        h4,
+        h5,
+        h6,
+        hr,
+        p,
+        pre {
+            margin: 0
+        }
+
+        fieldset {
+            margin: 0;
+            padding: 0
+        }
+
+        legend {
+            padding: 0
+        }
+
+        menu,
+        ol,
+        ul {
+            list-style: none;
+            margin: 0;
+            padding: 0
+        }
+
+        dialog {
+            padding: 0
+        }
+
+        textarea {
+            resize: vertical
+        }
+
+        input::placeholder,
+        textarea::placeholder {
+            opacity: 1;
+            color: #9ca3af
+        }
+
+        [role=button],
+        button {
+            cursor: pointer
+        }
+
+        :disabled {
+            cursor: default
+        }
+
+        audio,
+        canvas,
+        embed,
+        iframe,
+        img,
+        object,
+        svg,
+        video {
+            display: block;
+            vertical-align: middle
+        }
+
+        img,
+        video {
+            max-width: 100%;
+            height: auto
+        }
+
+        [hidden]:where(:not([hidden=until-found])) {
+            display: none
+        }
+
+        .pointer-events-none {
+            pointer-events: none
+        }
+
+        .absolute {
+            position: absolute
+        }
+
+        .relative {
+            position: relative
+        }
+
+        .sticky {
+            position: sticky
+        }
+
+        .inset-0 {
+            inset: 0px
+        }
+
+        .inset-y-0 {
+            top: 0px;
+            bottom: 0px
+        }
+
+        .-bottom-10 {
+            bottom: -2.5rem
+        }
+
+        .-left-10 {
+            left: -2.5rem
+        }
+
+        .-left-24 {
+            left: -6rem
+        }
+
+        .-right-24 {
+            right: -6rem
+        }
+
+        .-right-6 {
+            right: -1.5rem
+        }
+
+        .-top-24 {
+            top: -6rem
+        }
+
+        .-top-6 {
+            top: -1.5rem
+        }
+
+        .-top-8 {
+            top: -2rem
+        }
+
+        .bottom-0 {
+            bottom: 0px
+        }
+
+        .left-0 {
+            left: 0px
+        }
+
+        .left-1\/2 {
+            left: 50%
+        }
+
+        .right-0 {
+            right: 0px
+        }
+
+        .top-0 {
+            top: 0px
+        }
+
+        .top-1\/2 {
+            top: 50%
+        }
+
+        .top-1\/3 {
+            top: 33.333333%
+        }
+
+        .bottom-10 {
+            bottom: 2.5rem
+        }
+
+        .left-10 {
+            left: 2.5rem
+        }
+
+        .right-10 {
+            right: 2.5rem
+        }
+
+        .top-10 {
+            top: 2.5rem
+        }
+
+        .z-0 {
+            z-index: 0
+        }
+
+        .z-10 {
+            z-index: 10
+        }
+
+        .z-50 {
+            z-index: 50
+        }
+
+        .mx-auto {
+            margin-left: auto;
+            margin-right: auto
+        }
+
+        .mb-1 {
+            margin-bottom: 0.25rem
+        }
+
+        .mb-12 {
+            margin-bottom: 3rem
+        }
+
+        .mb-2 {
+            margin-bottom: 0.5rem
+        }
+
+        .mb-4 {
+            margin-bottom: 1rem
+        }
+
+        .mb-5 {
+            margin-bottom: 1.25rem
+        }
+
+        .mb-6 {
+            margin-bottom: 1.5rem
+        }
+
+        .mb-8 {
+            margin-bottom: 2rem
+        }
+
+        .ml-2 {
+            margin-left: 0.5rem
+        }
+
+        .ml-3 {
+            margin-left: 0.75rem
+        }
+
+        .ml-4 {
+            margin-left: 1rem
+        }
+
+        .ml-8 {
+            margin-left: 2rem
+        }
+
+        .mr-2 {
+            margin-right: 0.5rem
+        }
+
+        .mt-1 {
+            margin-top: 0.25rem
+        }
+
+        .mt-10 {
+            margin-top: 2.5rem
+        }
+
+        .mt-16 {
+            margin-top: 4rem
+        }
+
+        .mt-2 {
+            margin-top: 0.5rem
+        }
+
+        .mt-4 {
+            margin-top: 1rem
+        }
+
+        .mt-6 {
+            margin-top: 1.5rem
+        }
+
+        .mt-8 {
+            margin-top: 2rem
+        }
+
+        .mt-12 {
+            margin-top: 3rem
+        }
+
+        .block {
+            display: block
+        }
+
+        .flex {
+            display: flex
+        }
+
+        .inline-flex {
+            display: inline-flex
+        }
+
+        .grid {
+            display: grid
+        }
+
+        .hidden {
+            display: none
+        }
+
+        .h-1 {
+            height: 0.25rem
+        }
+
+        .h-1\/3 {
+            height: 33.333333%
+        }
+
+        .h-1\/4 {
+            height: 25%
+        }
+
+        .h-10 {
+            height: 2.5rem
+        }
+
+        .h-12 {
+            height: 3rem
+        }
+
+        .h-16 {
+            height: 4rem
+        }
+
+        .h-24 {
+            height: 6rem
+        }
+
+        .h-3 {
+            height: 0.75rem
+        }
+
+        .h-3\/4 {
+            height: 75%
+        }
+
+        .h-32 {
+            height: 8rem
+        }
+
+        .h-48 {
+            height: 12rem
+        }
+
+        .h-5 {
+            height: 1.25rem
+        }
+
+        .h-6 {
+            height: 1.5rem
+        }
+
+        .h-64 {
+            height: 16rem
+        }
+
+        .h-72 {
+            height: 18rem
+        }
+
+        .h-8 {
+            height: 2rem
+        }
+
+        .h-96 {
+            height: 24rem
+        }
+
+        .h-full {
+            height: 100%
+        }
+
+        .w-1\/3 {
+            width: 33.333333%
+        }
+
+        .w-1\/4 {
+            width: 25%
+        }
+
+        .w-10 {
+            width: 2.5rem
+        }
+
+        .w-12 {
+            width: 3rem
+        }
+
+        .w-16 {
+            width: 4rem
+        }
+
+        .w-24 {
+            width: 6rem
+        }
+
+        .w-3 {
+            width: 0.75rem
+        }
+
+        .w-3\/4 {
+            width: 75%
+        }
+
+        .w-32 {
+            width: 8rem
+        }
+
+        .w-5 {
+            width: 1.25rem
+        }
+
+        .w-6 {
+            width: 1.5rem
+        }
+
+        .w-72 {
+            width: 18rem
+        }
+
+        .w-8 {
+            width: 2rem
+        }
+
+        .w-96 {
+            width: 24rem
+        }
+
+        .w-full {
+            width: 100%
+        }
+
+        .min-w-full {
+            min-width: 100%
+        }
+
+        .max-w-2xl {
+            max-width: 42rem
+        }
+
+        .max-w-7xl {
+            max-width: 80rem
+        }
+
+        .max-w-lg {
+            max-width: 32rem
+        }
+
+        .max-w-md {
+            max-width: 28rem
+        }
+
+        .max-w-4xl {
+            max-width: 56rem
+        }
+
+        .flex-1 {
+            flex: 1 1 0%
+        }
+
+        .flex-shrink-0 {
+            flex-shrink: 0
+        }
+
+        .-translate-x-1\/2 {
+            --tw-translate-x: -50%;
+            transform: translate(var(--tw-translate-x), var(--tw-translate-y)) rotate(var(--tw-rotate)) skewX(var(--tw-skew-x)) skewY(var(--tw-skew-y)) scaleX(var(--tw-scale-x)) scaleY(var(--tw-scale-y))
+        }
+
+        .-translate-y-1\/2 {
+            --tw-translate-y: -50%;
+            transform: translate(var(--tw-translate-x), var(--tw-translate-y)) rotate(var(--tw-rotate)) skewX(var(--tw-skew-x)) skewY(var(--tw-skew-y)) scaleX(var(--tw-scale-x)) scaleY(var(--tw-scale-y))
+        }
+
+        .transform {
+            transform: translate(var(--tw-translate-x), var(--tw-translate-y)) rotate(var(--tw-rotate)) skewX(var(--tw-skew-x)) skewY(var(--tw-skew-y)) scaleX(var(--tw-scale-x)) scaleY(var(--tw-scale-y))
+        }
+
+        @keyframes float {
+
+            0%,
+            100% {
+                transform: translateY(0)
+            }
+
+            50% {
+                transform: translateY(-10px)
+            }
+        }
+
+        .animate-float {
+            animation: float 6s ease-in-out infinite
+        }
+
+        .grid-cols-2 {
+            grid-template-columns: repeat(2, minmax(0, 1fr))
+        }
+
+        .grid-cols-3 {
+            grid-template-columns: repeat(3, minmax(0, 1fr))
+        }
+
+        .flex-col {
+            flex-direction: column
+        }
+
+        .items-start {
+            align-items: flex-start
+        }
+
+        .items-end {
+            align-items: flex-end
+        }
+
+        .items-center {
+            align-items: center
+        }
+
+        .justify-center {
+            justify-content: center
+        }
+
+        .justify-between {
+            justify-content: space-between
+        }
+
+        .gap-12 {
+            gap: 3rem
+        }
+
+        .gap-3 {
+            gap: 0.75rem
+        }
+
+        .gap-4 {
+            gap: 1rem
+        }
+
+        .gap-8 {
+            gap: 2rem
+        }
+
+        .-space-x-2> :not([hidden])~ :not([hidden]) {
+            --tw-space-x-reverse: 0;
+            margin-right: calc(-0.5rem * var(--tw-space-x-reverse));
+            margin-left: calc(-0.5rem * calc(1 - var(--tw-space-x-reverse)))
+        }
+
+        .space-x-2> :not([hidden])~ :not([hidden]) {
+            --tw-space-x-reverse: 0;
+            margin-right: calc(0.5rem * var(--tw-space-x-reverse));
+            margin-left: calc(0.5rem * calc(1 - var(--tw-space-x-reverse)))
+        }
+
+        .space-x-8> :not([hidden])~ :not([hidden]) {
+            --tw-space-x-reverse: 0;
+            margin-right: calc(2rem * var(--tw-space-x-reverse));
+            margin-left: calc(2rem * calc(1 - var(--tw-space-x-reverse)))
+        }
+
+        .space-y-1> :not([hidden])~ :not([hidden]) {
+            --tw-space-y-reverse: 0;
+            margin-top: calc(0.25rem * calc(1 - var(--tw-space-y-reverse)));
+            margin-bottom: calc(0.25rem * var(--tw-space-y-reverse))
+        }
+
+        .space-y-4> :not([hidden])~ :not([hidden]) {
+            --tw-space-y-reverse: 0;
+            margin-top: calc(1rem * calc(1 - var(--tw-space-y-reverse)));
+            margin-bottom: calc(1rem * var(--tw-space-y-reverse))
+        }
+
+        .space-y-6> :not([hidden])~ :not([hidden]) {
+            --tw-space-y-reverse: 0;
+            margin-top: calc(1.5rem * calc(1 - var(--tw-space-y-reverse)));
+            margin-bottom: calc(1.5rem * var(--tw-space-y-reverse))
+        }
+
+        .divide-y> :not([hidden])~ :not([hidden]) {
+            --tw-divide-y-reverse: 0;
+            border-top-width: calc(1px * calc(1 - var(--tw-divide-y-reverse)));
+            border-bottom-width: calc(1px * var(--tw-divide-y-reverse))
+        }
+
+        .divide-gray-200> :not([hidden])~ :not([hidden]) {
+            --tw-divide-opacity: 1;
+            border-color: rgb(229 231 235 / var(--tw-divide-opacity, 1))
+        }
+
+        .overflow-hidden {
+            overflow: hidden
+        }
+
+        .overflow-x-auto {
+            overflow-x: auto
+        }
+
+        .whitespace-nowrap {
+            white-space: nowrap
+        }
+
+        .rounded {
+            border-radius: 0.25rem
+        }
+
+        .rounded-2xl {
+            border-radius: 1rem
+        }
+
+        .rounded-full {
+            border-radius: 9999px
+        }
+
+        .rounded-lg {
+            border-radius: 0.5rem
+        }
+
+        .rounded-md {
+            border-radius: 0.375rem
+        }
+
+        .rounded-xl {
+            border-radius: 0.75rem
+        }
+
+        .border {
+            border-width: 1px
+        }
+
+        .border-2 {
+            border-width: 2px
+        }
+
+        .border-t {
+            border-top-width: 1px
+        }
+
+        .border-b {
+            border-bottom-width: 1px
+        }
+
+        .border-gray-100 {
+            --tw-border-opacity: 1;
+            border-color: rgb(243 244 246 / var(--tw-border-opacity, 1))
+        }
+
+        .border-gray-200 {
+            --tw-border-opacity: 1;
+            border-color: rgb(229 231 235 / var(--tw-border-opacity, 1))
+        }
+
+        .border-gray-300 {
+            --tw-border-opacity: 1;
+            border-color: rgb(209 213 219 / var(--tw-border-opacity, 1))
+        }
+
+        .border-transparent {
+            border-color: transparent
+        }
+
+        .border-wiki-blue {
+            --tw-border-opacity: 1;
+            border-color: rgb(0 102 153 / var(--tw-border-opacity, 1))
+        }
+
+        .bg-gray-100 {
+            --tw-bg-opacity: 1;
+            background-color: rgb(243 244 246 / var(--tw-bg-opacity, 1))
+        }
+
+        .bg-gray-200 {
+            --tw-bg-opacity: 1;
+            background-color: rgb(229 231 235 / var(--tw-bg-opacity, 1))
+        }
+
+        .bg-gray-50 {
+            --tw-bg-opacity: 1;
+            background-color: rgb(249 250 251 / var(--tw-bg-opacity, 1))
+        }
+
+        .bg-green-400 {
+            --tw-bg-opacity: 1;
+            background-color: rgb(74 222 128 / var(--tw-bg-opacity, 1))
+        }
+
+        .bg-purple-500 {
+            --tw-bg-opacity: 1;
+            background-color: rgb(168 85 247 / var(--tw-bg-opacity, 1))
+        }
+
+        .bg-red-400 {
+            --tw-bg-opacity: 1;
+            background-color: rgb(248 113 113 / var(--tw-bg-opacity, 1))
+        }
+
+        .bg-white {
+            --tw-bg-opacity: 1;
+            background-color: rgb(255 255 255 / var(--tw-bg-opacity, 1))
+        }
+
+        .bg-white\/90 {
+            background-color: rgb(255 255 255 / 0.9)
+        }
+
+        .bg-wiki-blue {
+            --tw-bg-opacity: 1;
+            background-color: rgb(0 102 153 / var(--tw-bg-opacity, 1))
+        }
+
+        .bg-wiki-blue\/10 {
+            background-color: rgb(0 102 153 / 0.1)
+        }
+
+        .bg-wiki-blue\/5 {
+            background-color: rgb(0 102 153 / 0.05)
+        }
+
+        .bg-wiki-green {
+            --tw-bg-opacity: 1;
+            background-color: rgb(51 153 102 / var(--tw-bg-opacity, 1))
+        }
+
+        .bg-wiki-green\/10 {
+            background-color: rgb(51 153 102 / 0.1)
+        }
+
+        .bg-wiki-green\/5 {
+            background-color: rgb(51 153 102 / 0.05)
+        }
+
+        .bg-yellow-400 {
+            --tw-bg-opacity: 1;
+            background-color: rgb(250 204 21 / var(--tw-bg-opacity, 1))
+        }
+
+        .bg-gradient-to-br {
+            background-image: linear-gradient(to bottom right, var(--tw-gradient-stops))
+        }
+
+        .bg-gradient-to-r {
+            background-image: linear-gradient(to right, var(--tw-gradient-stops))
+        }
+
+        .from-wiki-blue {
+            --tw-gradient-from: #006699 var(--tw-gradient-from-position);
+            --tw-gradient-to: rgb(0 102 153 / 0) var(--tw-gradient-to-position);
+            --tw-gradient-stops: var(--tw-gradient-from), var(--tw-gradient-to)
+        }
+
+        .from-wiki-blue\/5 {
+            --tw-gradient-from: rgb(0 102 153 / 0.05) var(--tw-gradient-from-position);
+            --tw-gradient-to: rgb(0 102 153 / 0) var(--tw-gradient-to-position);
+            --tw-gradient-stops: var(--tw-gradient-from), var(--tw-gradient-to)
+        }
+
+        .via-wiki-green {
+            --tw-gradient-to: rgb(51 153 102 / 0) var(--tw-gradient-to-position);
+            --tw-gradient-stops: var(--tw-gradient-from), #339966 var(--tw-gradient-via-position), var(--tw-gradient-to)
+        }
+
+        .via-wiki-green\/5 {
+            --tw-gradient-to: rgb(51 153 102 / 0) var(--tw-gradient-to-position);
+            --tw-gradient-stops: var(--tw-gradient-from), rgb(51 153 102 / 0.05) var(--tw-gradient-via-position), var(--tw-gradient-to)
+        }
+
+        .to-white {
+            --tw-gradient-to: #fff var(--tw-gradient-to-position)
+        }
+
+        .to-wiki-blue {
+            --tw-gradient-to: #006699 var(--tw-gradient-to-position)
+        }
+
+        .to-wiki-green {
+            --tw-gradient-to: #339966 var(--tw-gradient-to-position)
+        }
+
+        .to-wiki-green\/5 {
+            --tw-gradient-to: rgb(51 153 102 / 0.05) var(--tw-gradient-to-position)
+        }
+
+        .p-3 {
+            padding: 0.75rem
+        }
+
+        .p-4 {
+            padding: 1rem
+        }
+
+        .p-6 {
+            padding: 1.5rem
+        }
+
+        .px-2 {
+            padding-left: 0.5rem;
+            padding-right: 0.5rem
+        }
+
+        .px-3 {
+            padding-left: 0.75rem;
+            padding-right: 0.75rem
+        }
+
+        .px-4 {
+            padding-left: 1rem;
+            padding-right: 1rem
+        }
+
+        .px-6 {
+            padding-left: 1.5rem;
+            padding-right: 1.5rem
+        }
+
+        .py-1 {
+            padding-top: 0.25rem;
+            padding-bottom: 0.25rem
+        }
+
+        .py-2 {
+            padding-top: 0.5rem;
+            padding-bottom: 0.5rem
+        }
+
+        .py-20 {
+            padding-top: 5rem;
+            padding-bottom: 5rem
+        }
+
+        .py-3 {
+            padding-top: 0.75rem;
+            padding-bottom: 0.75rem
+        }
+
+        .py-4 {
+            padding-top: 1rem;
+            padding-bottom: 1rem
+        }
+
+        .pb-3 {
+            padding-bottom: 0.75rem
+        }
+
+        .pb-32 {
+            padding-bottom: 8rem
+        }
+
+        .pl-3 {
+            padding-left: 0.75rem
+        }
+
+        .pr-10 {
+            padding-right: 2.5rem
+        }
+
+        .pr-3 {
+            padding-right: 0.75rem
+        }
+
+        .pt-16 {
+            padding-top: 4rem
+        }
+
+        .pt-2 {
+            padding-top: 0.5rem
+        }
+
+        .pt-6 {
+            padding-top: 1.5rem
+        }
+
+        .pb-4 {
+            padding-bottom: 1rem
+        }
+
+        .text-left {
+            text-align: left
+        }
+
+        .text-center {
+            text-align: center
+        }
+
+        .text-right {
+            text-align: right
+        }
+
+        .font-montserrat {
+            font-family: Montserrat, sans-serif
+        }
+
+        .text-2xl {
+            font-size: 1.5rem;
+            line-height: 2rem
+        }
+
+        .text-3xl {
+            font-size: 1.875rem;
+            line-height: 2.25rem
+        }
+
+        .text-4xl {
+            font-size: 2.25rem;
+            line-height: 2.5rem
+        }
+
+        .text-base {
+            font-size: 1rem;
+            line-height: 1.5rem
+        }
+
+        .text-lg {
+            font-size: 1.125rem;
+            line-height: 1.75rem
+        }
+
+        .text-sm {
+            font-size: 0.875rem;
+            line-height: 1.25rem
+        }
+
+        .text-xl {
+            font-size: 1.25rem;
+            line-height: 1.75rem
+        }
+
+        .text-xs {
+            font-size: 0.75rem;
+            line-height: 1rem
+        }
+
+        .font-bold {
+            font-weight: 700
+        }
+
+        .font-medium {
+            font-weight: 500
+        }
+
+        .font-semibold {
+            font-weight: 600
+        }
+
+        .uppercase {
+            text-transform: uppercase
+        }
+
+        .leading-tight {
+            line-height: 1.25
+        }
+
+        .tracking-wider {
+            letter-spacing: 0.05em
+        }
+
+        .text-gray-400 {
+            --tw-text-opacity: 1;
+            color: rgb(156 163 175 / var(--tw-text-opacity, 1))
+        }
+
+        .text-gray-500 {
+            --tw-text-opacity: 1;
+            color: rgb(107 114 128 / var(--tw-text-opacity, 1))
+        }
+
+        .text-gray-600 {
+            --tw-text-opacity: 1;
+            color: rgb(75 85 99 / var(--tw-text-opacity, 1))
+        }
+
+        .text-gray-700 {
+            --tw-text-opacity: 1;
+            color: rgb(55 65 81 / var(--tw-text-opacity, 1))
+        }
+
+        .text-gray-900 {
+            --tw-text-opacity: 1;
+            color: rgb(17 24 39 / var(--tw-text-opacity, 1))
+        }
+
+        .text-white {
+            --tw-text-opacity: 1;
+            color: rgb(255 255 255 / var(--tw-text-opacity, 1))
+        }
+
+        .text-wiki-blue {
+            --tw-text-opacity: 1;
+            color: rgb(0 102 153 / var(--tw-text-opacity, 1))
+        }
+
+        .text-wiki-green {
+            --tw-text-opacity: 1;
+            color: rgb(51 153 102 / var(--tw-text-opacity, 1))
+        }
+
+        .opacity-20 {
+            opacity: 0.2
+        }
+
+        .opacity-70 {
+            opacity: 0.7
+        }
+
+        .shadow-lg {
+            --tw-shadow: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
+            --tw-shadow-colored: 0 10px 15px -3px var(--tw-shadow-color), 0 4px 6px -4px var(--tw-shadow-color);
+            box-shadow: var(--tw-ring-offset-shadow, 0 0 #0000), var(--tw-ring-shadow, 0 0 #0000), var(--tw-shadow)
+        }
+
+        .shadow-md {
+            --tw-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+            --tw-shadow-colored: 0 4px 6px -1px var(--tw-shadow-color), 0 2px 4px -2px var(--tw-shadow-color);
+            box-shadow: var(--tw-ring-offset-shadow, 0 0 #0000), var(--tw-ring-shadow, 0 0 #0000), var(--tw-shadow)
+        }
+
+        .shadow-sm {
+            --tw-shadow: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+            --tw-shadow-colored: 0 1px 2px 0 var(--tw-shadow-color);
+            box-shadow: var(--tw-ring-offset-shadow, 0 0 #0000), var(--tw-ring-shadow, 0 0 #0000), var(--tw-shadow)
+        }
+
+        .shadow-xl {
+            --tw-shadow: 0 20px 25px -5px rgb(0 0 0 / 0.1), 0 8px 10px -6px rgb(0 0 0 / 0.1);
+            --tw-shadow-colored: 0 20px 25px -5px var(--tw-shadow-color), 0 8px 10px -6px var(--tw-shadow-color);
+            box-shadow: var(--tw-ring-offset-shadow, 0 0 #0000), var(--tw-ring-shadow, 0 0 #0000), var(--tw-shadow)
+        }
+
+        .ring-2 {
+            --tw-ring-offset-shadow: var(--tw-ring-inset) 0 0 0 var(--tw-ring-offset-width) var(--tw-ring-offset-color);
+            --tw-ring-shadow: var(--tw-ring-inset) 0 0 0 calc(2px + var(--tw-ring-offset-width)) var(--tw-ring-color);
+            box-shadow: var(--tw-ring-offset-shadow), var(--tw-ring-shadow), var(--tw-shadow, 0 0 #0000)
+        }
+
+        .ring-white {
+            --tw-ring-opacity: 1;
+            --tw-ring-color: rgb(255 255 255 / var(--tw-ring-opacity, 1))
+        }
+
+        .blur-3xl {
+            --tw-blur: blur(64px);
+            filter: var(--tw-blur) var(--tw-brightness) var(--tw-contrast) var(--tw-grayscale) var(--tw-hue-rotate) var(--tw-invert) var(--tw-saturate) var(--tw-sepia) var(--tw-drop-shadow)
+        }
+
+        .blur-xl {
+            --tw-blur: blur(24px);
+            filter: var(--tw-blur) var(--tw-brightness) var(--tw-contrast) var(--tw-grayscale) var(--tw-hue-rotate) var(--tw-invert) var(--tw-saturate) var(--tw-sepia) var(--tw-drop-shadow)
+        }
+
+        .filter {
+            filter: var(--tw-blur) var(--tw-brightness) var(--tw-contrast) var(--tw-grayscale) var(--tw-hue-rotate) var(--tw-invert) var(--tw-saturate) var(--tw-sepia) var(--tw-drop-shadow)
+        }
+
+        .backdrop-blur-md {
+            --tw-backdrop-blur: blur(12px);
+            -webkit-backdrop-filter: var(--tw-backdrop-blur) var(--tw-backdrop-brightness) var(--tw-backdrop-contrast) var(--tw-backdrop-grayscale) var(--tw-backdrop-hue-rotate) var(--tw-backdrop-invert) var(--tw-backdrop-opacity) var(--tw-backdrop-saturate) var(--tw-backdrop-sepia);
+            backdrop-filter: var(--tw-backdrop-blur) var(--tw-backdrop-brightness) var(--tw-backdrop-contrast) var(--tw-backdrop-grayscale) var(--tw-backdrop-hue-rotate) var(--tw-backdrop-invert) var(--tw-backdrop-opacity) var(--tw-backdrop-saturate) var(--tw-backdrop-sepia)
+        }
+
+        .transition {
+            transition-property: color, background-color, border-color, fill, stroke, opacity, box-shadow, transform, filter, -webkit-text-decoration-color, -webkit-backdrop-filter;
+            transition-property: color, background-color, border-color, text-decoration-color, fill, stroke, opacity, box-shadow, transform, filter, backdrop-filter;
+            transition-property: color, background-color, border-color, text-decoration-color, fill, stroke, opacity, box-shadow, transform, filter, backdrop-filter, -webkit-text-decoration-color, -webkit-backdrop-filter;
+            transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+            transition-duration: 150ms
+        }
+
+        .transition-all {
+            transition-property: all;
+            transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+            transition-duration: 150ms
+        }
+
+        .transition-colors {
+            transition-property: color, background-color, border-color, fill, stroke, -webkit-text-decoration-color;
+            transition-property: color, background-color, border-color, text-decoration-color, fill, stroke;
+            transition-property: color, background-color, border-color, text-decoration-color, fill, stroke, -webkit-text-decoration-color;
+            transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+            transition-duration: 150ms
+        }
+
+        .duration-300 {
+            transition-duration: 300ms
+        }
+
+        .ease-in-out {
+            transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1)
+        }
+
+        .hover\:-translate-y-1:hover {
+            --tw-translate-y: -0.25rem;
+            transform: translate(var(--tw-translate-x), var(--tw-translate-y)) rotate(var(--tw-rotate)) skewX(var(--tw-skew-x)) skewY(var(--tw-skew-y)) scaleX(var(--tw-scale-x)) scaleY(var(--tw-scale-y))
+        }
+
+        .hover\:bg-gray-100:hover {
+            --tw-bg-opacity: 1;
+            background-color: rgb(243 244 246 / var(--tw-bg-opacity, 1))
+        }
+
+        .hover\:bg-wiki-blue\/5:hover {
+            background-color: rgb(0 102 153 / 0.05)
+        }
+
+        .hover\:bg-wiki-blue\/90:hover {
+            background-color: rgb(0 102 153 / 0.9)
+        }
+
+        .hover\:text-wiki-blue:hover {
+            --tw-text-opacity: 1;
+            color: rgb(0 102 153 / var(--tw-text-opacity, 1))
+        }
+
+        .hover\:text-wiki-blue\/80:hover {
+            color: rgb(0 102 153 / 0.8)
+        }
+
+        .hover\:shadow-lg:hover {
+            --tw-shadow: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
+            --tw-shadow-colored: 0 10px 15px -3px var(--tw-shadow-color), 0 4px 6px -4px var(--tw-shadow-color);
+            box-shadow: var(--tw-ring-offset-shadow, 0 0 #0000), var(--tw-ring-shadow, 0 0 #0000), var(--tw-shadow)
+        }
+
+        .hover\:shadow-md:hover {
+            --tw-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+            --tw-shadow-colored: 0 4px 6px -1px var(--tw-shadow-color), 0 2px 4px -2px var(--tw-shadow-color);
+            box-shadow: var(--tw-ring-offset-shadow, 0 0 #0000), var(--tw-ring-shadow, 0 0 #0000), var(--tw-shadow)
+        }
+
+        .focus\:border-wiki-blue:focus {
+            --tw-border-opacity: 1;
+            border-color: rgb(0 102 153 / var(--tw-border-opacity, 1))
+        }
+
+        .focus\:outline-none:focus {
+            outline: 2px solid transparent;
+            outline-offset: 2px
+        }
+
+        .focus\:ring-wiki-blue:focus {
+            --tw-ring-opacity: 1;
+            --tw-ring-color: rgb(0 102 153 / var(--tw-ring-opacity, 1))
+        }
+
+        @media (min-width: 640px) {
+            .sm\:flex-row {
+                flex-direction: row
+            }
+
+            .sm\:space-x-4> :not([hidden])~ :not([hidden]) {
+                --tw-space-x-reverse: 0;
+                margin-right: calc(1rem * var(--tw-space-x-reverse));
+                margin-left: calc(1rem * calc(1 - var(--tw-space-x-reverse)))
+            }
+
+            .sm\:space-y-0> :not([hidden])~ :not([hidden]) {
+                --tw-space-y-reverse: 0;
+                margin-top: calc(0px * calc(1 - var(--tw-space-y-reverse)));
+                margin-bottom: calc(0px * var(--tw-space-y-reverse))
+            }
+
+            .sm\:px-6 {
+                padding-left: 1.5rem;
+                padding-right: 1.5rem
+            }
+
+            .sm\:text-4xl {
+                font-size: 2.25rem;
+                line-height: 2.5rem
+            }
+        }
+
+        @media (min-width: 768px) {
+            .md\:flex {
+                display: flex
+            }
+
+            .md\:hidden {
+                display: none
+            }
+
+            .md\:grid-cols-2 {
+                grid-template-columns: repeat(2, minmax(0, 1fr))
+            }
+
+            .md\:grid-cols-4 {
+                grid-template-columns: repeat(4, minmax(0, 1fr))
+            }
+
+            .md\:flex-row {
+                flex-direction: row
+            }
+
+            .md\:space-x-4> :not([hidden])~ :not([hidden]) {
+                --tw-space-x-reverse: 0;
+                margin-right: calc(1rem * var(--tw-space-x-reverse));
+                margin-left: calc(1rem * calc(1 - var(--tw-space-x-reverse)))
+            }
+
+            .md\:space-y-0> :not([hidden])~ :not([hidden]) {
+                --tw-space-y-reverse: 0;
+                margin-top: calc(0px * calc(1 - var(--tw-space-y-reverse)));
+                margin-bottom: calc(0px * var(--tw-space-y-reverse))
+            }
+
+            .md\:text-5xl {
+                font-size: 3rem;
+                line-height: 1
+            }
+        }
+
+        @media (min-width: 1024px) {
+            .lg\:mb-0 {
+                margin-bottom: 0px
+            }
+
+            .lg\:block {
+                display: block
+            }
+
+            .lg\:flex {
+                display: flex
+            }
+
+            .lg\:w-1\/2 {
+                width: 50%
+            }
+
+            .lg\:grid-cols-3 {
+                grid-template-columns: repeat(3, minmax(0, 1fr))
+            }
+
+            .lg\:grid-cols-4 {
+                grid-template-columns: repeat(4, minmax(0, 1fr))
+            }
+
+            .lg\:items-center {
+                align-items: center
+            }
+
+            .lg\:justify-between {
+                justify-content: space-between
+            }
+
+            .lg\:px-8 {
+                padding-left: 2rem;
+                padding-right: 2rem
+            }
+
+            .lg\:text-6xl {
+                font-size: 3.75rem;
+                line-height: 1
+            }
+        }
+    </style>
+
+
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+
+        body {
+            font-family: 'Inter', sans-serif;
+            scroll-behavior: smooth;
+        }
+
+        .gradient-bg {
+            background: linear-gradient(135deg, #3366cc 0%, #339966 100%);
+        }
+
+        .dark .gradient-bg {
+            background: linear-gradient(135deg, #1a325f 0%, #115533 100%);
+        }
+
+        .feature-card:hover {
+            transform: translateY(-5px);
+        }
+
+        .animated-gradient {
+            background-size: 200% 200%;
+            animation: gradientAnimation 5s ease infinite;
+        }
+
+        @keyframes gradientAnimation {
+            0% {
+                background-position: 0% 50%;
+            }
+
+            50% {
+                background-position: 100% 50%;
+            }
+
+            100% {
+                background-position: 0% 50%;
+            }
+        }
+
+        .logo-spin {
+            animation: spin 30s linear infinite;
+            transform-origin: center;
+        }
+
+        @keyframes spin {
+            from {
+                transform: rotate(0deg);
+            }
+
+            to {
+                transform: rotate(360deg);
+            }
+        }
+
+        .fade-in {
+            opacity: 0;
+            transform: translateY(20px);
+            transition: opacity 0.6s ease-out, transform 0.6s ease-out;
+        }
+
+        .fade-in.visible {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    </style>
+
+    <style>
+        /* Add these styles to enhance button interactions */
+        .button-hover-effect {
+            transition: transform 0.2s ease-in-out, box-shadow 0.2s ease-in-out;
+        }
+
+        .button-hover-effect:hover {
+            transform: scale(1.05);
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+        }
+    </style>
+</head>
+
+<body class="bg-white text-gray-900">
+    <!-- Navigation -->
+    <nav class="sticky top-0 z-50 bg-white/90 backdrop-blur-md shadow-sm">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between h-16">
+                <div class="flex items-center">
+                    <div class="flex-shrink-0 flex items-center">
+                        <!-- Custom Wikidata-Track Logo -->
+
+
+                        <div class="flex items-center space-x-2">
+                            <!-- Custom Wikidata-Track Logo -->
+                            <div class="w-10 h-10 relative logo-spin">
+
+                                <img src="logo.svg" alt="Wikidata Tracker Logo" width="100" height="100" />
+
+                            </div>
+                            <span class="ml-2 text-xl font-bold font-montserrat">
+                                <span class="text-wiki-blue">Wikidata</span><span class="text-wiki-green">-Track</span>
+                            </span>
+                        </div>
+
+                    </div>
+                </div>
+                <div class="hidden md:flex items-center space-x-8">
+                    <a href="#features"
+                        class="text-gray-700 hover:text-wiki-blue px-3 py-2 text-sm font-medium">Features</a>
+                    <a href="#how-it-works" class="text-gray-700 hover:text-wiki-blue px-3 py-2 text-sm font-medium">How
+                        It Works</a>
+                    <a href="#documentation"
+                        class="text-gray-700 hover:text-wiki-blue px-3 py-2 text-sm font-medium">Documentation</a>
+                    <a href="#faq" class="text-gray-700 hover:text-wiki-blue px-3 py-2 text-sm font-medium">FAQ</a>
+                </div>
+                <div class="flex items-center">
+                    <a href="/app/"
+                        class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-wiki-blue hover:bg-wiki-blue/90 shadow-sm hover:shadow-md transition-all duration-300 button-hover-effect">
+                        Get Started
+                    </a>
+                    <button class="md:hidden ml-4 text-gray-700 focus:outline-none" id="mobile-menu-button">
+                        <svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                d="M4 6h16M4 12h16M4 18h16"></path>
+                        </svg>
+                    </button>
+                </div>
+                <!-- <div class="p-2">
+                    <button id="theme-toggle"
+                        class="p-2 rounded-full bg-gray-100 dark:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-primary-light dark:focus:ring-blue-400">
+                       
+                        <svg id="sun-icon" class="w-5 h-5 text-yellow-500 hidden dark:block" fill="currentColor"
+                            viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
+                            <path fill-rule="evenodd"
+                                d="M10 2a1 1 0 011 1v1a1 1 0 11-2 0V3a1 1 0 011-1zm4 8a4 4 0 11-8 0 4 4 0 018 0zm-.464 4.95l.707.707a1 1 0 001.414-1.414l-.707-.707a1 1 0 00-1.414 1.414zm2.12-10.607a1 1 0 010 1.414l-.706.707a1 1 0 11-1.414-1.414l.707-.707a1 1 0 011.414 0zM17 11a1 1 0 100-2h-1a1 1 0 100 2h1zm-7 4a1 1 0 011 1v1a1 1 0 11-2 0v-1a1 1 0 011-1zM5.05 6.464A1 1 0 106.465 5.05l-.708-.707a1 1 0 00-1.414 1.414l.707.707zm1.414 8.486l-.707.707a1 1 0 01-1.414-1.414l.707-.707a1 1 0 011.414 1.414zM4 11a1 1 0 100-2H3a1 1 0 000 2h1z"
+                                clip-rule="evenodd"></path>
+                        </svg>
+                      
+                        <svg id="moon-icon" class="w-5 h-5 text-gray-700 block dark:hidden" fill="currentColor"
+                            viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
+                            <path d="M17.293 13.293A8 8 0 016.707 2.707a8.001 8.001 0 1010.586 10.586z"></path>
+                        </svg>
+                    </button>
+                </div> -->
+
+
+            </div>
+
+
+        </div>
+
+        <!-- Mobile menu -->
+        <div class="hidden md:hidden bg-white shadow-lg" id="mobile-menu">
+            <div class="px-2 pt-2 pb-3 space-y-1">
+                <a href="#features"
+                    class="block px-3 py-2 rounded-md text-base font-medium text-gray-700 hover:bg-gray-100">Features</a>
+                <a href="#how-it-works"
+                    class="block px-3 py-2 rounded-md text-base font-medium text-gray-700 hover:bg-gray-100">How It
+                    Works</a>
+                <a href="#demo"
+                    class="block px-3 py-2 rounded-md text-base font-medium text-gray-700 hover:bg-gray-100">Demo</a>
+                <a href="#faq"
+                    class="block px-3 py-2 rounded-md text-base font-medium text-gray-700 hover:bg-gray-100">FAQ</a>
+            </div>
+        </div>
+
+
+    </nav>
+
+
+
+    <!-- Hero Section -->
+    <section class="relative pt-16 pb-32 overflow-hidden">
+        <div class="absolute inset-0 z-0">
+            <div
+                class="absolute top-0 left-0 w-full h-full bg-gradient-to-br from-wiki-blue/5 via-wiki-green/5 to-white">
+            </div>
+            <div class="absolute -top-24 -right-24 w-96 h-96 bg-wiki-blue/10 rounded-full filter blur-3xl"></div>
+            <div class="absolute top-1/3 -left-24 w-72 h-72 bg-wiki-green/10 rounded-full filter blur-3xl"></div>
+        </div>
+
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
+            <div class="lg:flex lg:items-center lg:justify-between">
+                <div class="lg:w-1/2 mb-12 lg:mb-0">
+                    <div class="flex items-center mb-6">
+                        <span class="bg-wiki-blue/10 text-wiki-blue px-4 py-1 rounded-full text-sm font-medium">New
+                            Tool</span>
+                        <span class="ml-3 text-gray-500 text-sm">For Wikidata enthusiasts</span>
+                    </div>
+                    <h1 class="text-4xl md:text-5xl lg:text-6xl font-bold font-montserrat leading-tight">
+                        Track, Analyze, and Visualize <span class="gradient-text">Wikidata</span> User Contributions
+                    </h1>
+                    <p class="mt-6 text-xl text-gray-600">
+                        Gain deeper insights into how users contribute to Wikidata with powerful analytics and
+                        visualization tools.
+                    </p>
+                    <div class="mt-8 flex flex-col sm:flex-row sm:space-x-4 space-y-4 sm:space-y-0">
+                        <a href="/app/"
+                            class="inline-flex items-center justify-center px-6 py-3 border border-transparent text-base font-medium rounded-md text-white bg-wiki-blue hover:bg-wiki-blue/90 shadow-md hover:shadow-lg transform transition hover:-translate-y-1">
+                            Get Started Free
+                        </a>
+                        <a href="#demo"
+                            class="inline-flex items-center justify-center px-6 py-3 border-2 border-wiki-blue text-base font-medium rounded-md text-wiki-blue hover:bg-wiki-blue/5 transition">
+                            <svg class="mr-2 h-5 w-5" fill="currentColor" viewBox="0 0 20 20">
+                                <path fill-rule="evenodd"
+                                    d="M10 18a8 8 0 100-16 8 8 0 000 16zM9.555 7.168A1 1 0 008 8v4a1 1 0 001.555.832l3-2a1 1 0 000-1.664l-3-2z"
+                                    clip-rule="evenodd"></path>
+                            </svg>
+                            See Demo
+                        </a>
+                    </div>
+                    <div class="mt-10 flex items-center">
+                        <div class="flex -space-x-2">
+                            <img class="h-8 w-8 rounded-full ring-2 ring-white"
+                                src="data:image/svg+xml;charset=UTF-8,%3Csvg xmlns='http://www.w3.org/2000/svg' width='40' height='40' viewBox='0 0 40 40'%3E%3Crect width='40' height='40' fill='%23f97316'/%3E%3Ctext x='50%25' y='50%25' font-size='20' text-anchor='middle' alignment-baseline='middle' font-family='monospace' fill='white'%3EA%3C/text%3E%3C/svg%3E"
+                                alt="">
+                            <img class="h-8 w-8 rounded-full ring-2 ring-white"
+                                src="data:image/svg+xml;charset=UTF-8,%3Csvg xmlns='http://www.w3.org/2000/svg' width='40' height='40' viewBox='0 0 40 40'%3E%3Crect width='40' height='40' fill='%2310b981'/%3E%3Ctext x='50%25' y='50%25' font-size='20' text-anchor='middle' alignment-baseline='middle' font-family='monospace' fill='white'%3EB%3C/text%3E%3C/svg%3E"
+                                alt="">
+                            <img class="h-8 w-8 rounded-full ring-2 ring-white"
+                                src="data:image/svg+xml;charset=UTF-8,%3Csvg xmlns='http://www.w3.org/2000/svg' width='40' height='40' viewBox='0 0 40 40'%3E%3Crect width='40' height='40' fill='%233b82f6'/%3E%3Ctext x='50%25' y='50%25' font-size='20' text-anchor='middle' alignment-baseline='middle' font-family='monospace' fill='white'%3EC%3C/text%3E%3C/svg%3E"
+                                alt="">
+                        </div>
+                        <div class="ml-3 text-sm text-gray-500">
+                            <span class="font-medium text-gray-900">500+ users</span> are already tracking contributions
+                        </div>
+                    </div>
+                </div>
+                <div class="lg:w-1/2 flex justify-center">
+                    <div class="relative w-full max-w-lg">
+                        <!-- Decorative elements -->
+                        <!-- Top-right floating SVG -->
+                        <div class="absolute -top-6 -right-6 w-24 h-24 opacity-20 animate-float-slow">
+                            <svg class="w-full h-full" viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg">
+                                <circle cx="100" cy="100" r="90" fill="#f8f9fa" stroke="#2a4b8d" stroke-width="6" />
+                                <g class="logo-spin">
+                                    <rect x="60" y="50" width="16" height="100" fill="#3366cc" rx="4"></rect>
+                                    <rect x="92" y="50" width="16" height="100" fill="#339966" rx="4"></rect>
+                                    <rect x="124" y="50" width="16" height="100" fill="#3366cc" rx="4"></rect>
+
+                                    <circle cx="68" cy="70" r="8" fill="#ff5722" />
+                                    <circle cx="100" cy="100" r="8" fill="#ff5722" />
+                                    <circle cx="132" cy="130" r="8" fill="#ff5722" />
+
+                                    <path d="M68,70 L100,100 L132,130" stroke="#ff5722" stroke-width="3" fill="none"
+                                        stroke-dasharray="5,5" />
+
+                                    <circle cx="68" cy="70" r="12" fill="none" stroke="#ff5722" stroke-width="2"
+                                        opacity="0.6">
+                                        <animate attributeName="r" values="12;18;12" dur="3s"
+                                            repeatCount="indefinite" />
+                                    </circle>
+                                    <circle cx="100" cy="100" r="12" fill="none" stroke="#ff5722" stroke-width="2"
+                                        opacity="0.6">
+                                        <animate attributeName="r" values="12;18;12" dur="3s" begin="1s"
+                                            repeatCount="indefinite" />
+                                    </circle>
+                                    <circle cx="132" cy="130" r="12" fill="none" stroke="#ff5722" stroke-width="2"
+                                        opacity="0.6">
+                                        <animate attributeName="r" values="12;18;12" dur="3s" begin="2s"
+                                            repeatCount="indefinite" />
+                                    </circle>
+                                </g>
+                            </svg>
+                        </div>
+
+                        <!-- Bottom-left floating SVG -->
+                        <div class="absolute -bottom-10 -left-10 w-32 h-32 opacity-20 animate-float">
+                            <svg class="w-full h-full" viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg">
+                                <circle cx="100" cy="100" r="90" fill="#f8f9fa" stroke="#2a4b8d" stroke-width="6" />
+                                <g class="logo-spin">
+                                    <rect x="60" y="50" width="16" height="100" fill="#3366cc" rx="4"></rect>
+                                    <rect x="92" y="50" width="16" height="100" fill="#339966" rx="4"></rect>
+                                    <rect x="124" y="50" width="16" height="100" fill="#3366cc" rx="4"></rect>
+
+                                    <circle cx="68" cy="70" r="8" fill="#ff5722" />
+                                    <circle cx="100" cy="100" r="8" fill="#ff5722" />
+                                    <circle cx="132" cy="130" r="8" fill="#ff5722" />
+
+                                    <path d="M68,70 L100,100 L132,130" stroke="#ff5722" stroke-width="3" fill="none"
+                                        stroke-dasharray="5,5" />
+
+                                    <circle cx="68" cy="70" r="12" fill="none" stroke="#ff5722" stroke-width="2"
+                                        opacity="0.6">
+                                        <animate attributeName="r" values="12;18;12" dur="3s"
+                                            repeatCount="indefinite" />
+                                    </circle>
+                                    <circle cx="100" cy="100" r="12" fill="none" stroke="#ff5722" stroke-width="2"
+                                        opacity="0.6">
+                                        <animate attributeName="r" values="12;18;12" dur="3s" begin="1s"
+                                            repeatCount="indefinite" />
+                                    </circle>
+                                    <circle cx="132" cy="130" r="12" fill="none" stroke="#ff5722" stroke-width="2"
+                                        opacity="0.6">
+                                        <animate attributeName="r" values="12;18;12" dur="3s" begin="2s"
+                                            repeatCount="indefinite" />
+                                    </circle>
+                                </g>
+                            </svg>
+                        </div>
+
+                        <!-- Dashboard mockup -->
+                        <div class="relative bg-white rounded-2xl shadow-xl overflow-hidden border border-gray-200">
+                            <div class="bg-gradient-to-r from-wiki-blue to-wiki-green p-4">
+                                <div class="flex justify-between items-center">
+                                    <div class="flex items-center">
+                                        <svg class="h-6 w-6 text-white" viewBox="0 0 24 24" fill="none"
+                                            xmlns="http://www.w3.org/2000/svg">
+                                            <path
+                                                d="M8 16H6C4.89543 16 4 15.1046 4 14V6C4 4.89543 4.89543 4 6 4H18C19.1046 4 20 4.89543 20 6V14C20 15.1046 19.1046 16 18 16H16M12 20V10M12 10L16 14M12 10L8 14"
+                                                stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                                                stroke-linejoin="round"></path>
+                                        </svg>
+                                        <h3 class="ml-2 text-lg font-semibold text-white">User Contribution Dashboard
+                                        </h3>
+                                    </div>
+                                    <div class="flex space-x-2">
+                                        <div class="h-3 w-3 rounded-full bg-red-400"></div>
+                                        <div class="h-3 w-3 rounded-full bg-yellow-400"></div>
+                                        <div class="h-3 w-3 rounded-full bg-green-400"></div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="p-6">
+                                <div class="flex justify-between items-center mb-6">
+                                    <div>
+                                        <h4 class="font-semibold text-gray-900">User: WikidataEditor42</h4>
+                                        <p class="text-sm text-gray-500">Last 30 days activity</p>
+                                    </div>
+                                    <div
+                                        class="bg-wiki-blue/10 text-wiki-blue px-3 py-1 rounded-md text-sm font-medium">
+                                        Export Data
+                                    </div>
+                                </div>
+
+                                <!-- Chart -->
+                                <div class="h-48 mb-6">
+                                    <div class="h-full w-full flex items-end justify-between">
+                                        <div class="relative h-full flex items-end">
+                                            <div class="absolute left-0 h-full flex flex-col justify-between">
+                                                <span class="text-xs text-gray-500">100</span>
+                                                <span class="text-xs text-gray-500">75</span>
+                                                <span class="text-xs text-gray-500">50</span>
+                                                <span class="text-xs text-gray-500">25</span>
+                                                <span class="text-xs text-gray-500">0</span>
+                                            </div>
+                                            <div class="ml-8 h-full w-full flex items-end">
+                                                <svg class="h-full w-full" viewBox="0 0 300 150"
+                                                    preserveAspectRatio="none">
+                                                    <!-- Grid lines -->
+                                                    <line x1="0" y1="0" x2="300" y2="0" stroke="#e5e7eb"
+                                                        stroke-width="1"></line>
+                                                    <line x1="0" y1="37.5" x2="300" y2="37.5" stroke="#e5e7eb"
+                                                        stroke-width="1"></line>
+                                                    <line x1="0" y1="75" x2="300" y2="75" stroke="#e5e7eb"
+                                                        stroke-width="1"></line>
+                                                    <line x1="0" y1="112.5" x2="300" y2="112.5" stroke="#e5e7eb"
+                                                        stroke-width="1"></line>
+                                                    <line x1="0" y1="150" x2="300" y2="150" stroke="#e5e7eb"
+                                                        stroke-width="1"></line>
+
+                                                    <!-- Data line -->
+                                                    <path class="line"
+                                                        d="M0,120 L50,100 L100,80 L150,90 L200,40 L250,60 L300,30"
+                                                        fill="none" stroke="#006699" stroke-width="3"></path>
+
+                                                    <!-- Data points -->
+                                                    <circle class="data-point" cx="0" cy="120" r="4" fill="#006699">
+                                                    </circle>
+                                                    <circle class="data-point" cx="50" cy="100" r="4" fill="#006699">
+                                                    </circle>
+                                                    <circle class="data-point" cx="100" cy="80" r="4" fill="#006699">
+                                                    </circle>
+                                                    <circle class="data-point" cx="150" cy="90" r="4" fill="#006699">
+                                                    </circle>
+                                                    <circle class="data-point" cx="200" cy="40" r="4" fill="#006699">
+                                                    </circle>
+                                                    <circle class="data-point" cx="250" cy="60" r="4" fill="#006699">
+                                                    </circle>
+                                                    <circle class="data-point" cx="300" cy="30" r="4" fill="#006699">
+                                                    </circle>
+                                                </svg>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- Stats -->
+                                <div class="grid grid-cols-3 gap-4 mb-6">
+                                    <div class="bg-gray-50 p-3 rounded-lg">
+                                        <p class="text-sm text-gray-500">Total Edits</p>
+                                        <p class="text-xl font-bold text-gray-900">1,248</p>
+                                    </div>
+                                    <div class="bg-gray-50 p-3 rounded-lg">
+                                        <p class="text-sm text-gray-500">Properties</p>
+                                        <p class="text-xl font-bold text-gray-900">37</p>
+                                    </div>
+                                    <div class="bg-gray-50 p-3 rounded-lg">
+                                        <p class="text-sm text-gray-500">Q-IDs</p>
+                                        <p class="text-xl font-bold text-gray-900">523</p>
+                                    </div>
+                                </div>
+
+                                <!-- Filter controls -->
+                                <div class="flex space-x-2">
+                                    <div class="px-3 py-1 bg-wiki-blue text-white rounded-md text-sm">All Properties
+                                    </div>
+                                    <div class="px-3 py-1 bg-gray-100 text-gray-700 rounded-md text-sm">Labels</div>
+                                    <div class="px-3 py-1 bg-gray-100 text-gray-700 rounded-md text-sm">Statements</div>
+                                    <div class="px-3 py-1 bg-gray-100 text-gray-700 rounded-md text-sm">Q-IDs</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="custom-shape-divider">
+            <svg data-name="Layer 1" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 120"
+                preserveAspectRatio="none">
+                <path
+                    d="M321.39,56.44c58-10.79,114.16-30.13,172-41.86,82.39-16.72,168.19-17.73,250.45-.39C823.78,31,906.67,72,985.66,92.83c70.05,18.48,146.53,26.09,214.34,3V0H0V27.35A600.21,600.21,0,0,0,321.39,56.44Z"
+                    class="shape-fill"></path>
+            </svg>
+        </div>
+    </section>
+
+
+    <!-- Features Section -->
+    <section id="features" class="py-20 bg-white">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="text-center">
+                <h2 class="text-3xl font-bold font-montserrat sm:text-4xl">
+                    <span class="gradient-text">Key Features</span> of Wikidata-Track
+                </h2>
+                <p class="mt-4 max-w-2xl text-xl text-gray-600 mx-auto">
+                    Powerful tools to help you understand and analyze Wikidata contributions.
+                </p>
+            </div>
+
+            <div class="mt-16 grid gap-8 md:grid-cols-2 lg:grid-cols-3">
+                <!-- Feature 1 -->
+                <div
+                    class="bg-white rounded-xl shadow-md p-6 transition duration-300 ease-in-out feature-card border border-gray-100">
+                    <div class="h-12 w-12 rounded-lg bg-wiki-blue/10 flex items-center justify-center mb-5">
+                        <svg class="h-6 w-6 text-wiki-blue" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path>
+                        </svg>
+                    </div>
+                    <h3 class="text-lg font-semibold text-gray-900 mb-2">Track User Activity</h3>
+                    <p class="text-gray-600">
+                        Monitor contributions by username, filtered by specific properties like Q-ID, Label,
+                        Description, and Statements.
+                    </p>
+                </div>
+
+                <!-- Feature 2 -->
+                <div
+                    class="bg-white rounded-xl shadow-md p-6 transition duration-300 ease-in-out feature-card border border-gray-100">
+                    <div class="h-12 w-12 rounded-lg bg-wiki-blue/10 flex items-center justify-center mb-5">
+                        <svg class="h-6 w-6 text-wiki-blue" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z">
+                            </path>
+                        </svg>
+                    </div>
+                    <h3 class="text-lg font-semibold text-gray-900 mb-2">Interactive Analytics</h3>
+                    <p class="text-gray-600">
+                        Visualize user edits over time with easy-to-understand charts and graphs that reveal patterns
+                        and trends.
+                    </p>
+                </div>
+
+                <!-- Feature 3 -->
+                <div
+                    class="bg-white rounded-xl shadow-md p-6 transition duration-300 ease-in-out feature-card border border-gray-100">
+                    <div class="h-12 w-12 rounded-lg bg-wiki-blue/10 flex items-center justify-center mb-5">
+                        <svg class="h-6 w-6 text-wiki-blue" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z">
+                            </path>
+                        </svg>
+                    </div>
+                    <h3 class="text-lg font-semibold text-gray-900 mb-2">Filter by Date</h3>
+                    <p class="text-gray-600">
+                        Select any date range to track edits and activity, from a single day to months or years of
+                        contributions.
+                    </p>
+                </div>
+
+                <!-- Feature 4 -->
+                <div
+                    class="bg-white rounded-xl shadow-md p-6 transition duration-300 ease-in-out feature-card border border-gray-100">
+                    <div class="h-12 w-12 rounded-lg bg-wiki-blue/10 flex items-center justify-center mb-5">
+                        <svg class="h-6 w-6 text-wiki-blue" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path>
+                        </svg>
+                    </div>
+                    <h3 class="text-lg font-semibold text-gray-900 mb-2">Export Data</h3>
+                    <p class="text-gray-600">
+                        Download your findings in CSV, JSON, or PDF formats for easy reporting, sharing, and further
+                        analysis.
+                    </p>
+                </div>
+
+                <!-- Feature 5 -->
+                <div
+                    class="bg-white rounded-xl shadow-md p-6 transition duration-300 ease-in-out feature-card border border-gray-100">
+                    <div class="h-12 w-12 rounded-lg bg-wiki-blue/10 flex items-center justify-center mb-5">
+                        <svg class="h-6 w-6 text-wiki-blue" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                d="M13 10V3L4 14h7v7l9-11h-7z"></path>
+                        </svg>
+                    </div>
+                    <h3 class="text-lg font-semibold text-gray-900 mb-2">Real-Time Insights</h3>
+                    <p class="text-gray-600">
+                        Stay up-to-date with the latest edit trends and track user engagement efficiently with real-time
+                        data updates.
+                    </p>
+                </div>
+
+                <!-- Feature 6 -->
+                <div
+                    class="bg-white rounded-xl shadow-md p-6 transition duration-300 ease-in-out feature-card border border-gray-100">
+                    <div class="h-12 w-12 rounded-lg bg-wiki-blue/10 flex items-center justify-center mb-5">
+                        <svg class="h-6 w-6 text-wiki-blue" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z">
+                            </path>
+                        </svg>
+                    </div>
+                    <h3 class="text-lg font-semibold text-gray-900 mb-2">Comprehensive Reports</h3>
+                    <p class="text-gray-600">
+                        Generate detailed reports on user activity, including edit types, frequency, and contribution
+                        patterns.
+                    </p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Visualization Section -->
+    <section class="py-20 bg-gray-50">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="lg:flex lg:items-center lg:justify-between">
+                <div class="lg:w-1/2 mb-12 lg:mb-0">
+                    <h2 class="text-3xl font-bold font-montserrat sm:text-4xl">
+                        <span class="gradient-text">See Your Data</span> in Action
+                    </h2>
+                    <p class="mt-4 text-xl text-gray-600">
+                        Wikidata-Track provides powerful visualizations to help you understand contribution patterns.
+                    </p>
+
+                    <div class="mt-8 space-y-6">
+                        <div class="flex items-start">
+                            <div class="flex-shrink-0">
+                                <div
+                                    class="flex items-center justify-center h-12 w-12 rounded-md bg-wiki-blue text-white">
+                                    <svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                            d="M7 12l3-3 3 3 4-4M8 21l4-4 4 4M3 4h18M4 4h16v12a1 1 0 01-1 1H5a1 1 0 01-1-1V4z">
+                                        </path>
+                                    </svg>
+                                </div>
+                            </div>
+                            <div class="ml-4">
+                                <h3 class="text-lg font-medium text-gray-900">Line Graphs &amp; Pie Charts</h3>
+                                <p class="mt-2 text-gray-600">
+                                    Visualize edit frequency and property distribution over time to identify patterns
+                                    and trends.
+                                </p>
+                            </div>
+                        </div>
+
+                        <div class="flex items-start">
+                            <div class="flex-shrink-0">
+                                <div
+                                    class="flex items-center justify-center h-12 w-12 rounded-md bg-wiki-green text-white">
+                                    <svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                            d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z">
+                                        </path>
+                                    </svg>
+                                </div>
+                            </div>
+                            <div class="ml-4">
+                                <h3 class="text-lg font-medium text-gray-900">Activity Heatmaps</h3>
+                                <p class="mt-2 text-gray-600">
+                                    Track when users are most active with detailed heatmaps showing peak contribution
+                                    times.
+                                </p>
+                            </div>
+                        </div>
+
+                        <div class="flex items-start">
+                            <div class="flex-shrink-0">
+                                <div
+                                    class="flex items-center justify-center h-12 w-12 rounded-md bg-wiki-blue text-white">
+                                    <svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                            d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01">
+                                        </path>
+                                    </svg>
+                                </div>
+                            </div>
+                            <div class="ml-4">
+                                <h3 class="text-lg font-medium text-gray-900">Comprehensive Edit Logs</h3>
+                                <p class="mt-2 text-gray-600">
+                                    Access detailed logs with timestamps and property details for complete transparency.
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="lg:w-1/2 flex justify-center">
+                    <div class="relative w-full max-w-md">
+                        <!-- Chart visualization -->
+                        <div class="bg-white rounded-xl shadow-lg p-6 border border-gray-200">
+                            <div class="flex justify-between items-center mb-6">
+                                <h3 class="font-semibold text-gray-900">Property Distribution</h3>
+                                <div class="flex space-x-2">
+                                    <div class="w-3 h-3 rounded-full bg-wiki-blue"></div>
+                                    <div class="w-3 h-3 rounded-full bg-wiki-green"></div>
+                                    <div class="w-3 h-3 rounded-full bg-yellow-400"></div>
+                                    <div class="w-3 h-3 rounded-full bg-purple-500"></div>
+                                </div>
+                            </div>
+
+                            <!-- Pie chart -->
+                            <div class="h-64 flex items-center justify-center mb-6">
+                                <svg viewBox="0 0 100 100" class="w-full h-full">
+                                    <!-- Pie segments -->
+                                    <circle cx="50" cy="50" r="40" fill="transparent" stroke="#006699" stroke-width="20"
+                                        stroke-dasharray="75 175" stroke-dashoffset="25" class="chart-animation">
+                                    </circle>
+                                    <circle cx="50" cy="50" r="40" fill="transparent" stroke="#339966" stroke-width="20"
+                                        stroke-dasharray="50 200" stroke-dashoffset="-50" class="chart-animation">
+                                    </circle>
+                                    <circle cx="50" cy="50" r="40" fill="transparent" stroke="#eab308" stroke-width="20"
+                                        stroke-dasharray="30 220" stroke-dashoffset="-100" class="chart-animation">
+                                    </circle>
+                                    <circle cx="50" cy="50" r="40" fill="transparent" stroke="#a855f7" stroke-width="20"
+                                        stroke-dasharray="20 230" stroke-dashoffset="-130" class="chart-animation">
+                                    </circle>
+
+                                    <!-- Center circle -->
+                                    <circle cx="50" cy="50" r="30" fill="white"></circle>
+                                    <text x="50" y="50" text-anchor="middle" alignment-baseline="middle" font-size="10"
+                                        font-weight="bold">100%</text>
+                                </svg>
+                            </div>
+
+                            <!-- Legend -->
+                            <div class="grid grid-cols-2 gap-3">
+                                <div class="flex items-center">
+                                    <div class="w-3 h-3 rounded-full bg-wiki-blue mr-2"></div>
+                                    <span class="text-sm text-gray-600">Labels (42%)</span>
+                                </div>
+                                <div class="flex items-center">
+                                    <div class="w-3 h-3 rounded-full bg-wiki-green mr-2"></div>
+                                    <span class="text-sm text-gray-600">Statements (28%)</span>
+                                </div>
+                                <div class="flex items-center">
+                                    <div class="w-3 h-3 rounded-full bg-yellow-400 mr-2"></div>
+                                    <span class="text-sm text-gray-600">Descriptions (17%)</span>
+                                </div>
+                                <div class="flex items-center">
+                                    <div class="w-3 h-3 rounded-full bg-purple-500 mr-2"></div>
+                                    <span class="text-sm text-gray-600">Other (13%)</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- How It Works -->
+    <section id="how-it-works" class="py-20 bg-white relative overflow-hidden">
+        <div class="absolute top-0 right-0 w-1/3 h-1/3 bg-wiki-blue/5 rounded-full filter blur-3xl"></div>
+        <div class="absolute bottom-0 left-0 w-1/4 h-1/4 bg-wiki-green/5 rounded-full filter blur-3xl"></div>
+
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
+            <div class="text-center">
+                <h2 class="text-3xl font-bold font-montserrat sm:text-4xl">
+                    <span class="gradient-text">How Wikidata-Track</span> Works
+                </h2>
+                <p class="mt-4 max-w-2xl text-xl text-gray-600 mx-auto">
+                    Start tracking and analyzing Wikidata contributions in just a few simple steps.
+                </p>
+            </div>
+
+            <div class="mt-16">
+                <div class="relative">
+                    <!-- Connection line -->
+                    <div
+                        class="hidden lg:block absolute top-1/2 left-0 right-0 h-1 bg-gradient-to-r from-wiki-blue via-wiki-green to-wiki-blue transform -translate-y-1/2 z-0">
+                    </div>
+
+                    <div class="grid gap-12 lg:grid-cols-4 relative z-10">
+                        <!-- Step 1 -->
+                        <div class="bg-white rounded-xl shadow-md p-6 relative">
+                            <div
+                                class="absolute -top-8 left-1/2 transform -translate-x-1/2 w-16 h-16 rounded-full bg-wiki-blue flex items-center justify-center text-white text-2xl font-bold">
+                                1</div>
+                            <div class="pt-6">
+                                <h3 class="text-lg font-semibold text-gray-900 text-center mb-4">Enter a Username</h3>
+                                <p class="text-gray-600 text-center">
+                                    Track the contributions of any Wikidata user by entering their username.
+                                </p>
+                                <div class="mt-6 flex justify-center">
+                                    <svg class="h-16 w-16 text-wiki-blue" fill="none" viewBox="0 0 24 24"
+                                        stroke="currentColor">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"
+                                            d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z">
+                                        </path>
+                                    </svg>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Step 2 -->
+                        <div class="bg-white rounded-xl shadow-md p-6 relative">
+                            <div
+                                class="absolute -top-8 left-1/2 transform -translate-x-1/2 w-16 h-16 rounded-full bg-wiki-green flex items-center justify-center text-white text-2xl font-bold">
+                                2</div>
+                            <div class="pt-6">
+                                <h3 class="text-lg font-semibold text-gray-900 text-center mb-4">Select a Date Range
+                                </h3>
+                                <p class="text-gray-600 text-center">
+                                    Narrow down activity to a specific period that you want to analyze.
+                                </p>
+                                <div class="mt-6 flex justify-center">
+                                    <svg class="h-16 w-16 text-wiki-green" fill="none" viewBox="0 0 24 24"
+                                        stroke="currentColor">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"
+                                            d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z">
+                                        </path>
+                                    </svg>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Step 3 -->
+                        <div class="bg-white rounded-xl shadow-md p-6 relative">
+                            <div
+                                class="absolute -top-8 left-1/2 transform -translate-x-1/2 w-16 h-16 rounded-full bg-wiki-blue flex items-center justify-center text-white text-2xl font-bold">
+                                3</div>
+                            <div class="pt-6">
+                                <h3 class="text-lg font-semibold text-gray-900 text-center mb-4">Choose Properties</h3>
+                                <p class="text-gray-600 text-center">
+                                    Focus on specific fields such as Q-ID, Labels, Statements, and more.
+                                </p>
+                                <div class="mt-6 flex justify-center">
+                                    <svg class="h-16 w-16 text-wiki-blue" fill="none" viewBox="0 0 24 24"
+                                        stroke="currentColor">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"
+                                            d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01">
+                                        </path>
+                                    </svg>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Step 4 -->
+                        <div class="bg-white rounded-xl shadow-md p-6 relative">
+                            <div
+                                class="absolute -top-8 left-1/2 transform -translate-x-1/2 w-16 h-16 rounded-full bg-wiki-green flex items-center justify-center text-white text-2xl font-bold">
+                                4</div>
+                            <div class="pt-6">
+                                <h3 class="text-lg font-semibold text-gray-900 text-center mb-4">View and Analyze</h3>
+                                <p class="text-gray-600 text-center">
+                                    Instantly access visualizations and detailed logs of the user's activity.
+                                </p>
+                                <div class="mt-6 flex justify-center">
+                                    <svg class="h-16 w-16 text-wiki-green" fill="none" viewBox="0 0 24 24"
+                                        stroke="currentColor">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"
+                                            d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z">
+                                        </path>
+                                    </svg>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Demo Section -->
+    <section id="demo" class="py-20 bg-gray-50 overflow-hidden">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="text-center">
+                <h2 class="text-3xl font-bold font-montserrat sm:text-4xl">
+                    <span class="gradient-text">See Wikidata-Track</span> in Action
+                </h2>
+                <p class="mt-4 max-w-2xl text-xl text-gray-600 mx-auto">
+                    Try our interactive demo to experience the power of Wikidata-Track.
+                </p>
+            </div>
+
+            <div class="mt-16 relative">
+                <!-- Background decorations -->
+                <div class="absolute inset-0 flex items-center justify-center">
+                    <div
+                        class="w-3/4 h-3/4 bg-gradient-to-br from-wiki-blue/5 to-wiki-green/5 rounded-full filter blur-3xl opacity-70">
+                    </div>
+                </div>
+
+                <div class="relative z-10">
+                    <div class="bg-white rounded-xl shadow-xl overflow-hidden border border-gray-200">
+                        <div class="bg-gradient-to-r from-wiki-blue to-wiki-green p-4">
+                            <div class="flex justify-between items-center">
+                                <h3 class="text-lg font-semibold text-white">Wikidata-Track Demo</h3>
+                                <div class="flex space-x-2">
+                                    <div class="h-3 w-3 rounded-full bg-red-400"></div>
+                                    <div class="h-3 w-3 rounded-full bg-yellow-400"></div>
+                                    <div class="h-3 w-3 rounded-full bg-green-400"></div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="p-6">
+                            <div class="flex flex-col md:flex-row md:space-x-4 space-y-4 md:space-y-0 mb-8">
+                                <div class="flex-1">
+                                    <label class="block text-sm font-medium text-gray-700 mb-1">Username</label>
+                                    <div class="mt-1 relative rounded-md shadow-sm">
+                                        <input type="text"
+                                            class="focus:ring-wiki-blue focus:border-wiki-blue block w-full pl-3 pr-10 py-2 border border-gray-300 rounded-md"
+                                            placeholder="Enter Wikidata username" value="WikidataEditor42">
+                                        <div
+                                            class="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none">
+                                            <svg class="h-5 w-5 text-gray-400" fill="none" viewBox="0 0 24 24"
+                                                stroke="currentColor">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                                    d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z">
+                                                </path>
+                                            </svg>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div class="flex-1">
+                                    <label class="block text-sm font-medium text-gray-700 mb-1">Date Range</label>
+                                    <div class="mt-1 relative rounded-md shadow-sm">
+                                        <input type="text"
+                                            class="focus:ring-wiki-blue focus:border-wiki-blue block w-full pl-3 pr-10 py-2 border border-gray-300 rounded-md"
+                                            placeholder="Select date range" value="Last 30 days">
+                                        <div
+                                            class="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none">
+                                            <svg class="h-5 w-5 text-gray-400" fill="none" viewBox="0 0 24 24"
+                                                stroke="currentColor">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                                    d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z">
+                                                </path>
+                                            </svg>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div class="flex-1">
+                                    <label class="block text-sm font-medium text-gray-700 mb-1">Properties</label>
+                                    <div class="mt-1 relative rounded-md shadow-sm">
+                                        <select
+                                            class="focus:ring-wiki-blue focus:border-wiki-blue block w-full pl-3 pr-10 py-2 border border-gray-300 rounded-md">
+                                            <option>All Properties</option>
+                                            <option>Labels Only</option>
+                                            <option>Statements Only</option>
+                                            <option>Q-IDs Only</option>
+                                        </select>
+                                        <div
+                                            class="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none">
+                                            <svg class="h-5 w-5 text-gray-400" fill="none" viewBox="0 0 24 24"
+                                                stroke="currentColor">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                                    d="M8 9l4-4 4 4m0 6l-4 4-4-4"></path>
+                                            </svg>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="flex justify-center mb-8">
+                                <button
+                                    class="px-6 py-3 bg-wiki-blue text-white font-medium rounded-md shadow-md hover:bg-wiki-blue/90 transition-colors button-hover-effect">
+                                    Analyze Contributions
+                                </button>
+                            </div>
+
+                            <!-- Results section -->
+                            <div class="border-t border-gray-200 pt-6">
+                                <h4 class="text-lg font-medium text-gray-900 mb-4">Results for WikidataEditor42</h4>
+
+                                <!-- Chart -->
+                                <div class="bg-gray-50 p-4 rounded-lg mb-6">
+                                    <div class="flex justify-between items-center mb-4">
+                                        <h5 class="font-medium text-gray-700">Edit Activity (Last 30 Days)</h5>
+                                        <div class="flex space-x-2">
+                                            <div class="px-2 py-1 bg-wiki-blue/10 text-wiki-blue text-xs rounded">Daily
+                                            </div>
+                                            <div class="px-2 py-1 bg-gray-200 text-gray-700 text-xs rounded">Weekly
+                                            </div>
+                                            <div class="px-2 py-1 bg-gray-200 text-gray-700 text-xs rounded">Monthly
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <div class="h-48">
+                                        <svg class="w-full h-full" viewBox="0 0 800 200" preserveAspectRatio="none">
+                                            <!-- Grid lines -->
+                                            <line x1="50" y1="20" x2="50" y2="180" stroke="#e5e7eb" stroke-width="1">
+                                            </line>
+                                            <line x1="50" y1="180" x2="750" y2="180" stroke="#e5e7eb" stroke-width="1">
+                                            </line>
+                                            <line x1="50" y1="140" x2="750" y2="140" stroke="#e5e7eb" stroke-width="1"
+                                                stroke-dasharray="4,4"></line>
+                                            <line x1="50" y1="100" x2="750" y2="100" stroke="#e5e7eb" stroke-width="1"
+                                                stroke-dasharray="4,4"></line>
+                                            <line x1="50" y1="60" x2="750" y2="60" stroke="#e5e7eb" stroke-width="1"
+                                                stroke-dasharray="4,4"></line>
+                                            <line x1="50" y1="20" x2="750" y2="20" stroke="#e5e7eb" stroke-width="1"
+                                                stroke-dasharray="4,4"></line>
+
+                                            <!-- X-axis labels -->
+                                            <text x="50" y="195" font-size="10" text-anchor="middle">1</text>
+                                            <text x="162" y="195" font-size="10" text-anchor="middle">7</text>
+                                            <text x="274" y="195" font-size="10" text-anchor="middle">14</text>
+                                            <text x="386" y="195" font-size="10" text-anchor="middle">21</text>
+                                            <text x="498" y="195" font-size="10" text-anchor="middle">28</text>
+                                            <text x="610" y="195" font-size="10" text-anchor="middle">30</text>
+
+                                            <!-- Y-axis labels -->
+                                            <text x="40" y="184" font-size="10" text-anchor="end">0</text>
+                                            <text x="40" y="144" font-size="10" text-anchor="end">25</text>
+                                            <text x="40" y="104" font-size="10" text-anchor="end">50</text>
+                                            <text x="40" y="64" font-size="10" text-anchor="end">75</text>
+                                            <text x="40" y="24" font-size="10" text-anchor="end">100</text>
+
+                                            <!-- Data line -->
+                                            <path class="line"
+                                                d="M50,150 L106,130 L162,110 L218,140 L274,90 L330,120 L386,70 L442,100 L498,60 L554,80 L610,40 L666,70 L722,50"
+                                                fill="none" stroke="#006699" stroke-width="2"></path>
+
+                                            <!-- Area under the line -->
+                                            <path
+                                                d="M50,150 L106,130 L162,110 L218,140 L274,90 L330,120 L386,70 L442,100 L498,60 L554,80 L610,40 L666,70 L722,50 L722,180 L50,180 Z"
+                                                fill="url(#blue-gradient)" opacity="0.2"></path>
+
+                                            <!-- Data points -->
+                                            <circle cx="50" cy="150" r="4" fill="#006699" class="data-point"></circle>
+                                            <circle cx="106" cy="130" r="4" fill="#006699" class="data-point"></circle>
+                                            <circle cx="162" cy="110" r="4" fill="#006699" class="data-point"></circle>
+                                            <circle cx="218" cy="140" r="4" fill="#006699" class="data-point"></circle>
+                                            <circle cx="274" cy="90" r="4" fill="#006699" class="data-point"></circle>
+                                            <circle cx="330" cy="120" r="4" fill="#006699" class="data-point"></circle>
+                                            <circle cx="386" cy="70" r="4" fill="#006699" class="data-point"></circle>
+                                            <circle cx="442" cy="100" r="4" fill="#006699" class="data-point"></circle>
+                                            <circle cx="498" cy="60" r="4" fill="#006699" class="data-point"></circle>
+                                            <circle cx="554" cy="80" r="4" fill="#006699" class="data-point"></circle>
+                                            <circle cx="610" cy="40" r="4" fill="#006699" class="data-point"></circle>
+                                            <circle cx="666" cy="70" r="4" fill="#006699" class="data-point"></circle>
+                                            <circle cx="722" cy="50" r="4" fill="#006699" class="data-point"></circle>
+
+                                            <!-- Gradient definition -->
+                                            <defs>
+                                                <linearGradient id="blue-gradient" x1="0%" y1="0%" x2="0%" y2="100%">
+                                                    <stop offset="0%" stop-color="#006699" stop-opacity="0.5"></stop>
+                                                    <stop offset="100%" stop-color="#006699" stop-opacity="0"></stop>
+                                                </linearGradient>
+                                            </defs>
+                                        </svg>
+                                    </div>
+                                </div>
+
+                                <!-- Stats -->
+                                <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
+                                    <div class="bg-white p-4 rounded-lg border border-gray-200">
+                                        <p class="text-sm text-gray-500">Total Edits</p>
+                                        <p class="text-2xl font-bold text-gray-900">1,248</p>
+                                    </div>
+                                    <div class="bg-white p-4 rounded-lg border border-gray-200">
+                                        <p class="text-sm text-gray-500">Avg. Daily Edits</p>
+                                        <p class="text-2xl font-bold text-gray-900">41.6</p>
+                                    </div>
+                                    <div class="bg-white p-4 rounded-lg border border-gray-200">
+                                        <p class="text-sm text-gray-500">Most Active Day</p>
+                                        <p class="text-2xl font-bold text-gray-900">Jun 25</p>
+                                    </div>
+                                    <div class="bg-white p-4 rounded-lg border border-gray-200">
+                                        <p class="text-sm text-gray-500">Top Property</p>
+                                        <p class="text-2xl font-bold text-gray-900">Labels</p>
+                                    </div>
+                                </div>
+
+                                <!-- Recent edits -->
+                                <div class="bg-white rounded-lg border border-gray-200">
+                                    <div class="px-4 py-3 border-b border-gray-200">
+                                        <h5 class="font-medium text-gray-700">Recent Edits</h5>
+                                    </div>
+                                    <div class="overflow-x-auto">
+                                        <table class="min-w-full divide-y divide-gray-200">
+                                            <thead class="bg-gray-50">
+                                                <tr>
+                                                    <th scope="col"
+                                                        class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                                        Time</th>
+                                                    <th scope="col"
+                                                        class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                                        Item</th>
+                                                    <th scope="col"
+                                                        class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                                        Property</th>
+                                                    <th scope="col"
+                                                        class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                                        Action</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody class="bg-white divide-y divide-gray-200">
+                                                <tr>
+                                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">2 mins
+                                                        ago</td>
+                                                    <td
+                                                        class="px-6 py-4 whitespace-nowrap text-sm font-medium text-wiki-blue">
+                                                        Q42</td>
+                                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">Label
+                                                        (en)</td>
+                                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                                        Modified</td>
+                                                </tr>
+                                                <tr>
+                                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">15
+                                                        mins ago</td>
+                                                    <td
+                                                        class="px-6 py-4 whitespace-nowrap text-sm font-medium text-wiki-blue">
+                                                        Q100</td>
+                                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                                        Statement (P31)</td>
+                                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">Added
+                                                    </td>
+                                                </tr>
+                                                <tr>
+                                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">1 hour
+                                                        ago</td>
+                                                    <td
+                                                        class="px-6 py-4 whitespace-nowrap text-sm font-medium text-wiki-blue">
+                                                        Q5318</td>
+                                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                                        Description (fr)</td>
+                                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">Added
+                                                    </td>
+                                                </tr>
+                                                <tr>
+                                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">3
+                                                        hours ago</td>
+                                                    <td
+                                                        class="px-6 py-4 whitespace-nowrap text-sm font-medium text-wiki-blue">
+                                                        Q1234</td>
+                                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                                        Statement (P279)</td>
+                                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                                        Modified</td>
+                                                </tr>
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                    <div class="px-4 py-3 bg-gray-50 text-right">
+                                        <button class="text-wiki-blue hover:text-wiki-blue/80 text-sm font-medium">
+                                            View All Edits →
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- FAQ Section -->
+    <section id="faq" class="py-20 bg-white relative overflow-hidden">
+        <div class="absolute top-0 left-0 w-full h-full">
+            <div class="absolute top-10 left-10 w-32 h-32 bg-wiki-blue/10 rounded-full filter blur-xl"></div>
+            <div class="absolute bottom-10 right-10 w-32 h-32 bg-wiki-green/10 rounded-full filter blur-xl"></div>
+        </div>
+
+        <div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
+            <div class="text-center">
+                <h2 class="text-3xl font-bold font-montserrat sm:text-4xl">
+                    <span class="gradient-text">Frequently Asked</span> Questions
+                </h2>
+                <p class="mt-4 max-w-2xl text-xl text-gray-600 mx-auto">
+                    Find answers to common questions about Wikidata-Track.
+                </p>
+            </div>
+
+            <div class="mt-12 space-y-6">
+                <!-- FAQ Item 1 -->
+                <div class="bg-white rounded-xl shadow-md overflow-hidden border border-gray-100">
+                    <button
+                        class="w-full px-6 py-4 text-left focus:outline-none flex justify-between items-center faq-button button-hover-effect">
+                        <span class="text-lg font-medium text-gray-900">Is Wikidata-Track free to use?</span>
+                        <svg class="h-5 w-5 text-wiki-blue transform transition-transform duration-300" fill="none"
+                            viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7">
+                            </path>
+                        </svg>
+                    </button>
+                    <div class="faq-content px-6 pb-4">
+                        <p class="text-gray-600">
+                            Yes, Wikidata-Track is completely free to use for basic tracking and analytics. We also
+                            offer premium features for researchers and organizations who need advanced analytics
+                            capabilities.
+                        </p>
+                    </div>
+                </div>
+
+                <!-- FAQ Item 2 -->
+                <div class="bg-white rounded-xl shadow-md overflow-hidden border border-gray-100">
+                    <button
+                        class="w-full px-6 py-4 text-left focus:outline-none flex justify-between items-center faq-button button-hover-effect">
+                        <span class="text-lg font-medium text-gray-900">How far back can I track user
+                            contributions?</span>
+                        <svg class="h-5 w-5 text-wiki-blue transform transition-transform duration-300" fill="none"
+                            viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7">
+                            </path>
+                        </svg>
+                    </button>
+                    <div class="faq-content px-6 pb-4">
+                        <p class="text-gray-600">
+                            Wikidata-Track can access the complete history of user contributions available in the
+                            Wikidata public API. This typically includes all edits made since the user account was
+                            created, with no time limitations.
+                        </p>
+                    </div>
+                </div>
+
+                <!-- FAQ Item 3 -->
+                <div class="bg-white rounded-xl shadow-md overflow-hidden border border-gray-100">
+                    <button
+                        class="w-full px-6 py-4 text-left focus:outline-none flex justify-between items-center faq-button button-hover-effect">
+                        <span class="text-lg font-medium text-gray-900">Can I track multiple users at once?</span>
+                        <svg class="h-5 w-5 text-wiki-blue transform transition-transform duration-300" fill="none"
+                            viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7">
+                            </path>
+                        </svg>
+                    </button>
+                    <div class="faq-content px-6 pb-4">
+                        <p class="text-gray-600">
+                            Yes, with our premium features you can track and compare multiple users simultaneously. This
+                            is particularly useful for research projects or when analyzing team contributions to
+                            Wikidata.
+                        </p>
+                    </div>
+                </div>
+
+                <!-- FAQ Item 4 -->
+                <div class="bg-white rounded-xl shadow-md overflow-hidden border border-gray-100">
+                    <button
+                        class="w-full px-6 py-4 text-left focus:outline-none flex justify-between items-center faq-button button-hover-effect">
+                        <span class="text-lg font-medium text-gray-900">Is my usage of Wikidata-Track private?</span>
+                        <svg class="h-5 w-5 text-wiki-blue transform transition-transform duration-300" fill="none"
+                            viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7">
+                            </path>
+                        </svg>
+                    </button>
+                    <div class="faq-content px-6 pb-4">
+                        <p class="text-gray-600">
+                            Yes, your searches and analytics are private to your account. We do not share your usage
+                            data with third parties. The tool only accesses publicly available Wikidata contribution
+                            information.
+                        </p>
+                    </div>
+                </div>
+
+                <!-- FAQ Item 5 -->
+                <div class="bg-white rounded-xl shadow-md overflow-hidden border border-gray-100">
+                    <button
+                        class="w-full px-6 py-4 text-left focus:outline-none flex justify-between items-center faq-button button-hover-effect">
+                        <span class="text-lg font-medium text-gray-900">How often is the data updated?</span>
+                        <svg class="h-5 w-5 text-wiki-blue transform transition-transform duration-300" fill="none"
+                            viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7">
+                            </path>
+                        </svg>
+                    </button>
+                    <div class="faq-content px-6 pb-4">
+                        <p class="text-gray-600">
+                            Wikidata-Track pulls data in real-time from the Wikidata API when you perform a search. This
+                            ensures that you always have access to the most current contribution information available.
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Documentation Section -->
+    <section id="documentation" class="py-20 bg-gray-50">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="text-center mb-16">
+                <h2 class="text-3xl font-bold font-montserrat sm:text-4xl">
+                    <span class="gradient-text">Complete Documentation</span>
+                </h2>
+                <p class="mt-4 max-w-2xl text-xl text-gray-600 mx-auto">
+                    A comprehensive guide to using the Wikidata Activity Tracker system
+                </p>
+            </div>
+
+            <div class="grid gap-8 md:grid-cols-2 lg:grid-cols-3">
+                <!-- User Activity Tracker -->
+                <div class="bg-white rounded-xl shadow-md p-6 border border-gray-100">
+                    <div class="h-12 w-12 rounded-lg bg-wiki-blue/10 flex items-center justify-center mb-5">
+                        <svg class="h-6 w-6 text-wiki-blue" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path>
+                        </svg>
+                    </div>
+                    <h3 class="text-lg font-semibold text-gray-900 mb-4">User Activity Tracker</h3>
+                    <div class="space-y-4">
+                        <div>
+                            <h4 class="font-medium text-gray-900 mb-2">Single User Features</h4>
+                            <ul class="text-gray-600 space-y-2">
+                                <li class="flex items-start">
+                                    <svg class="h-5 w-5 text-wiki-green mr-2 mt-0.5" fill="none" viewBox="0 0 24 24"
+                                        stroke="currentColor">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                            d="M5 13l4 4L19 7"></path>
+                                    </svg>
+                                    Track edits by username
+                                </li>
+                                <li class="flex items-start">
+                                    <svg class="h-5 w-5 text-wiki-green mr-2 mt-0.5" fill="none" viewBox="0 0 24 24"
+                                        stroke="currentColor">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                            d="M5 13l4 4L19 7"></path>
+                                    </svg>
+                                    Filter by date range and property types
+                                </li>
+                                <li class="flex items-start">
+                                    <svg class="h-5 w-5 text-wiki-green mr-2 mt-0.5" fill="none" viewBox="0 0 24 24"
+                                        stroke="currentColor">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                            d="M5 13l4 4L19 7"></path>
+                                    </svg>
+                                    Export results to CSV/JSON
+                                </li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Entity Tracker -->
+                <div class="bg-white rounded-xl shadow-md p-6 border border-gray-100">
+                    <div class="h-12 w-12 rounded-lg bg-wiki-blue/10 flex items-center justify-center mb-5">
+                        <svg class="h-6 w-6 text-wiki-blue" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2">
+                            </path>
+                        </svg>
+                    </div>
+                    <h3 class="text-lg font-semibold text-gray-900 mb-4">Entity Tracker</h3>
+                    <ul class="text-gray-600 space-y-3">
+                        <li class="flex items-start">
+                            <svg class="h-5 w-5 text-wiki-green mr-2 mt-0.5" fill="none" viewBox="0 0 24 24"
+                                stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                    d="M5 13l4 4L19 7"></path>
+                            </svg>
+                            Track Q-items and Properties
+                        </li>
+                        <li class="flex items-start">
+                            <svg class="h-5 w-5 text-wiki-green mr-2 mt-0.5" fill="none" viewBox="0 0 24 24"
+                                stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                    d="M5 13l4 4L19 7"></path>
+                            </svg>
+                            Historical revision tracking
+                        </li>
+                    </ul>
+                </div>
+
+                <!-- Analytics Dashboard -->
+                <div class="bg-white rounded-xl shadow-md p-6 border border-gray-100">
+                    <div class="h-12 w-12 rounded-lg bg-wiki-blue/10 flex items-center justify-center mb-5">
+                        <svg class="h-6 w-6 text-wiki-blue" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z">
+                            </path>
+                        </svg>
+                    </div>
+                    <h3 class="text-lg font-semibold text-gray-900 mb-4">Analytics Dashboard</h3>
+                    <ul class="text-gray-600 space-y-3">
+                        <li class="flex items-start">
+                            <svg class="h-5 w-5 text-wiki-green mr-2 mt-0.5" fill="none" viewBox="0 0 24 24"
+                                stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                    d="M5 13l4 4L19 7"></path>
+                            </svg>
+                            Activity Timeline (Line Chart)
+                        </li>
+                        <li class="flex items-start">
+                            <svg class="h-5 w-5 text-wiki-green mr-2 mt-0.5" fill="none" viewBox="0 0 24 24"
+                                stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                    d="M5 13l4 4L19 7"></path>
+                            </svg>
+                            Contributor Rankings (Bar Chart)
+                        </li>
+                    </ul>
+                </div>
+            </div>
+
+            <!-- Technical Specifications -->
+            <div class="mt-16 bg-white rounded-xl shadow-md p-6 border border-gray-100">
+                <h3 class="text-xl font-semibold text-gray-900 mb-6">Technical Specifications</h3>
+                <div class="grid gap-8 md:grid-cols-2">
+                    <div>
+                        <h4 class="font-medium text-gray-900 mb-4">Frontend Stack</h4>
+                        <ul class="text-gray-600 space-y-2">
+                            <li class="flex items-center">
+                                <span class="w-2 h-2 bg-wiki-blue rounded-full mr-2"></span>
+                                React.js (v18.3.1)
+                            </li>
+                            <li class="flex items-center">
+                                <span class="w-2 h-2 bg-wiki-blue rounded-full mr-2"></span>
+                                TypeScript
+                            </li>
+                            <li class="flex items-center">
+                                <span class="w-2 h-2 bg-wiki-blue rounded-full mr-2"></span>
+                                Vite (v5.4.2)
+                            </li>
+                        </ul>
+                    </div>
+                    <div>
+                        <h4 class="font-medium text-gray-900 mb-4">Development Requirements</h4>
+                        <ul class="text-gray-600 space-y-2">
+                            <li class="flex items-center">
+                                <span class="w-2 h-2 bg-wiki-green rounded-full mr-2"></span>
+                                Node.js v16+
+                            </li>
+                            <li class="flex items-center">
+                                <span class="w-2 h-2 bg-wiki-green rounded-full mr-2"></span>
+                                Modern web browser
+                            </li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Get Started Section -->
+    <section id="get-started" class="py-20 relative overflow-hidden animated-gradient">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
+            <div class="lg:flex lg:<script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="
+                window.__cf$cv$params="{r:'943d1514e31c63c3',t:'MTc0NzkyNDk2OS4wMDAwMDA='};var"
+                a="document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);&quot;;b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var"
+                if(window.addeventlistener)document.addeventlistener('domcontentloaded',c);else{var=""
+                e="document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&amp;&amp;(document.onreadystatechange=e,c())}}}})();</script">
+            </div>
+        </div>
+    </section>
+
+    <!-- Footer Section -->
+    <footer class="bg-gray-900 text-white">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+            <div class="grid grid-cols-1 md:grid-cols-4 gap-8">
+                <!-- Company Info -->
+                <div class="space-y-4">
+                    <div class="flex items-center">
+                        <div class="w-10 h-10 relative logo-spin">
+
+                            <img src="logo.svg" alt="Wikidata Tracker Logo" width="100" height="100" />
+
+                        </div>
+                        <span class="ml-2 text-xl font-bold font-montserrat">
+                            <span class="text-wiki-blue">Wikidata</span><span class="text-wiki-green">-Track</span>
+                        </span>
+                    </div>
+                    <p class="text-gray-400 text-sm">
+                        Track, analyze, and visualize Wikidata user contributions with powerful analytics tools.
+                    </p>
+                </div>
+
+                <!-- Quick Links -->
+                <div>
+                    <h3 class="text-lg font-semibold mb-4">Quick Links</h3>
+                    <ul class="space-y-2">
+                        <li><a href="#features" class="text-gray-400 hover:text-white transition-colors">Features</a>
+                        </li>
+                        <li><a href="#how-it-works" class="text-gray-400 hover:text-white transition-colors">How It
+                                Works</a></li>
+                        <li><a href="#documentation" class="text-gray-400 hover:text-white transition-colors">Documentation</a></li>
+                        <li><a href="#faq" class="text-gray-400 hover:text-white transition-colors">FAQ</a></li>
+                        <li><a href="#documentation"
+                                class="text-gray-400 hover:text-white transition-colors">Documentation</a></li>
+                    </ul>
+                </div>
+
+                <!-- Resources -->
+                <div>
+                    <h3 class="text-lg font-semibold mb-4">Resources</h3>
+                    <ul class="space-y-2">
+                        <li><a href="#" class="text-gray-400 hover:text-white transition-colors">API Documentation</a>
+                        </li>
+                        <li><a href="#" class="text-gray-400 hover:text-white transition-colors">Developer Guide</a>
+                        </li>
+                        <li><a href="#" class="text-gray-400 hover:text-white transition-colors">Community Forum</a>
+                        </li>
+                        <li><a href="#" class="text-gray-400 hover:text-white transition-colors">Blog</a></li>
+                        <li><a href="#" class="text-gray-400 hover:text-white transition-colors">Support</a></li>
+                    </ul>
+                </div>
+
+                <!-- Connect -->
+                <div>
+                    <h3 class="text-lg font-semibold mb-4">Connect With Us</h3>
+                    <div class="flex space-x-4">
+                        <a href="#" class="text-gray-400 hover:text-white transition-colors">
+                            <svg class="h-6 w-6" fill="currentColor" viewBox="0 0 24 24">
+                                <path
+                                    d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z" />
+                            </svg>
+                        </a>
+                        <a href="#" class="text-gray-400 hover:text-white transition-colors">
+                            <svg class="h-6 w-6" fill="currentColor" viewBox="0 0 24 24">
+                                <path
+                                    d="M23.953 4.57a10 10 0 01-2.825.775 4.958 4.958 0 002.163-2.723c-.951.555-2.005.959-3.127 1.184a4.92 4.92 0 00-8.384 4.482C7.69 8.095 4.067 6.13 1.64 3.162a4.822 4.822 0 00-.666 2.475c0 1.71.87 3.213 2.188 4.096a4.904 4.904 0 01-2.228-.616v.06a4.923 4.923 0 003.946 4.827 4.996 4.996 0 01-2.212.085 4.936 4.936 0 004.604 3.417 9.867 9.867 0 01-6.102 2.105c-.39 0-.779-.023-1.17-.067a13.995 13.995 0 007.557 2.209c9.053 0 13.998-7.496 13.998-13.985 0-.21 0-.42-.015-.63A9.935 9.935 0 0024 4.59z" />
+                            </svg>
+                        </a>
+                        <a href="#" class="text-gray-400 hover:text-white transition-colors">
+                            <svg class="h-6 w-6" fill="currentColor" viewBox="0 0 24 24">
+                                <path
+                                    d="M12 0C5.373 0 0 5.373 0 12s5.373 12 12 12 12-5.373 12-12S18.627 0 12 0zm4.441 16.892c-2.102.144-6.784.144-8.883 0C5.282 16.736 5.017 15.622 5 12c.017-3.629.285-4.736 2.558-4.892 2.099-.144 6.782-.144 8.883 0C18.718 7.264 18.982 8.378 19 12c-.018 3.629-.285 4.736-2.559 4.892zM10 9.658l4.917 2.338L10 14.342V9.658z" />
+                            </svg>
+                        </a>
+                        <a href="#" class="text-gray-400 hover:text-white transition-colors">
+                            <svg class="h-6 w-6" fill="currentColor" viewBox="0 0 24 24">
+                                <path
+                                    d="M12 0C5.373 0 0 5.373 0 12s5.373 12 12 12 12-5.373 12-12S18.627 0 12 0zm-2 16h-2v-6h2v6zm-1-6.891c-.607 0-1.1-.496-1.1-1.109 0-.612.492-1.109 1.1-1.109s1.1.497 1.1 1.109c0 .613-.493 1.109-1.1 1.109zm8 6.891h-1.998v-2.861c0-1.881-2.002-1.722-2.002 0v2.861h-2v-6h2v1.093c.872-1.616 4-1.736 4 1.548v3.359z" />
+                            </svg>
+                        </a>
+                    </div>
+                    <div class="mt-6">
+                        <h4 class="text-sm font-semibold mb-2">Subscribe to our newsletter</h4>
+                        <form class="flex">
+                            <input type="email" placeholder="Enter your email"
+                                class="px-4 py-2 rounded-l-md w-full focus:outline-none focus:ring-2 focus:ring-wiki-blue text-gray-900">
+                            <button type="submit"
+                                class="bg-wiki-blue px-4 py-2 rounded-r-md hover:bg-wiki-blue/90 transition-colors">
+                                Subscribe
+                            </button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Bottom Bar -->
+            <div class="border-t border-gray-800 mt-12 pt-8">
+                <div class="flex flex-col md:flex-row justify-between items-center">
+                    <p class="text-gray-400 text-sm">
+                        © 2025 Wikidata-Track. All rights reserved.
+                    </p>
+                    <div class="flex space-x-6 mt-4 md:mt-0">
+                        <a href="#" class="text-gray-400 hover:text-white text-sm">Privacy Policy</a>
+                        <a href="#" class="text-gray-400 hover:text-white text-sm">Terms of Service</a>
+                        <a href="#" class="text-gray-400 hover:text-white text-sm">Cookie Policy</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </footer>
+
+    <script>
+        // Mobile menu toggle
+        const mobileMenuButton = document.getElementById('mobile-menu-button');
+        const mobileMenu = document.getElementById('mobile-menu');
+
+        if (mobileMenuButton && mobileMenu) {
+            mobileMenuButton.addEventListener('click', () => {
+                mobileMenu.classList.toggle('hidden');
+            });
+        }
+
+        // FAQ accordion functionality
+        const faqButtons = document.querySelectorAll('#faq button');
+
+        faqButtons.forEach(button => {
+            button.addEventListener('click', () => {
+                const content = button.nextElementSibling;
+                const icon = button.querySelector('svg');
+
+                // Toggle content visibility
+                content.style.display = content.style.display === 'none' ? 'block' : 'none';
+
+                // Rotate icon
+                icon.style.transform = icon.style.transform === 'rotate(180deg)' ? 'rotate(0deg)' : 'rotate(180deg)';
+            });
+        });
+
+        // Smooth scrolling for anchor links
+        document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+            anchor.addEventListener('click', function (e) {
+                e.preventDefault();
+                const target = document.querySelector(this.getAttribute('href'));
+                if (target) {
+                    target.scrollIntoView({
+                        behavior: 'smooth',
+                        block: 'start'
+                    });
+                    // Close mobile menu if open
+                    if (mobileMenu && !mobileMenu.classList.contains('hidden')) {
+                        mobileMenu.classList.add('hidden');
+                    }
+                }
+            });
+        });
+
+        // Add active state to navigation links based on scroll position
+        const sections = document.querySelectorAll('section[id]');
+        const navLinks = document.querySelectorAll('nav a[href^="#"]');
+
+        function setActiveLink() {
+            const scrollPosition = window.scrollY;
+
+            sections.forEach(section => {
+                const sectionTop = section.offsetTop - 100;
+                const sectionHeight = section.offsetHeight;
+                const sectionId = section.getAttribute('id');
+
+                if (scrollPosition >= sectionTop && scrollPosition < sectionTop + sectionHeight) {
+                    navLinks.forEach(link => {
+                        link.classList.remove('text-wiki-blue');
+                        link.classList.add('text-gray-700');
+                        if (link.getAttribute('href') === `#${sectionId}`) {
+                            link.classList.remove('text-gray-700');
+                            link.classList.add('text-wiki-blue');
+                        }
+                    });
+                }
+            });
+        }
+
+        window.addEventListener('scroll', setActiveLink);
+        window.addEventListener('load', setActiveLink);
+
+        // Initialize FAQ sections
+        document.querySelectorAll('#faq button').forEach(button => {
+            const content = button.nextElementSibling;
+            content.style.display = 'none';
+        });
+    </script>
+</body>
+
 </html>
