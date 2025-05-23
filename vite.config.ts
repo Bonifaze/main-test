@@ -18,3 +18,12 @@ export default defineConfig({
     exclude: ['lucide-react'],
   },
 });
+
+
+// export default defineConfig({
+//   base: '/wikidata-tracker/',
+//   plugins: [react()],
+//   optimizeDeps: {
+//     exclude: ['lucide-react'],
+//   },
+// });
