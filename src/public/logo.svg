@@ -1,0 +1,20 @@
+<!-- wikidata-tracker-logo.svg -->
+<svg width="100" height="100" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
+  <!-- Base circle -->
+  <circle cx="50" cy="50" r="45" fill="#f8f9fa" stroke="#2a4b8d" stroke-width="4"/>
+
+  <!-- Wikidata-inspired bars -->
+  <g>
+    <rect x="30" y="25" width="8" height="50" fill="#3366cc" rx="2"/>
+    <rect x="46" y="25" width="8" height="50" fill="#339966" rx="2"/>
+    <rect x="62" y="25" width="8" height="50" fill="#3366cc" rx="2"/>
+
+    <!-- Tracking points -->
+    <circle cx="34" cy="35" r="4" fill="#ff5722"/>
+    <circle cx="50" cy="50" r="4" fill="#ff5722"/>
+    <circle cx="66" cy="65" r="4" fill="#ff5722"/>
+
+    <!-- Connecting dashed line -->
+    <path d="M34,35 L50,50 L66,65" stroke="#ff5722" stroke-width="2" fill="none" stroke-dasharray="3,3"/>
+  </g>
+</svg>
